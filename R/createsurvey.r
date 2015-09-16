@@ -1,3 +1,5 @@
+#function written by Tom Leeper
+#proposed changes by Kevin Little, Ph.D. 24 August 2015
 createsurvey <- function(
     template = NULL,
     survey = NULL,
@@ -5,9 +7,14 @@ createsurvey <- function(
     collector_name = NULL,
     type = 'email', # only 'email' is allowed
     recipients = NULL,
+    #recipients needs to be a list of list(s) of character strings.  E.g. recipients=list(list('first@example.com),list('second@example.com))
+    # or recipients=list(list(email='first@example.com,first_name='first',last_name='last',custom_id='123'))
     email_replyto = NULL,
     email_subject = NULL,
     email_body = NULL,
+    #email_body is required containing [SurveyLink], [OptOutLink] and [FooterLink] (unless you have account privileges
+    #to set global options in SurveyMonkey to remove presense of the SurveyMonkey Footer).  Note [OptOutLink] is the 
+    #current (as of 24 Aug 2015) link replacing [RemoveLink] per http://help.surveymonkey.com/articles/en_US/kb/SurveyLink-and-RemoveLink
     api_key = getOption('sm_api_key'),
     oauth_token = getOption('sm_oauth_token')
 ){
@@ -53,7 +60,7 @@ createsurvey <- function(
                   list(subject = email_subject, reply_email = email_replyto)
                   } else { list(reply_email = email_replyto,
                                             subject = email_subject,
-                                            body = email_body)})
+                                            body_text = email_body #parameter corrected)})
     } else if(!is.null(survey)){
         if(inherits(survey, 'sm_survey'))
             survey <- survey$survey_id
@@ -68,7 +75,7 @@ createsurvey <- function(
                   list(subject = email_subject, reply_email = email_replyto)
                   } else { list(reply_email = email_replyto,
                                             subject = email_subject,
-                                            body = email_body)})
+                                            body_text = email_body #parameter corrected)})
     }
     b <- toJSON(b, auto_unbox = TRUE)
     h <- add_headers(Authorization=token, 'Content-Type'='application/json')
