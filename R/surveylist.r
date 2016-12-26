@@ -38,7 +38,7 @@ surveylist <- function(
     #     warning("An error occurred: ",content$errmsg)
     #     return(content)
     # } else 
-    # lapply(content$data$surveys, `class<-`, 'sm_survey')
+    lapply(content$data, `class<-`, 'sm_survey')
 }
 
 print.sm_survey <- function(x, ...){
