@@ -40,29 +40,3 @@ surveylist <- function(
     # } else 
     lapply(content$data, `class<-`, 'sm_survey')
 }
-
-print.sm_survey <- function(x, ...){
-  if(!is.null(x$title)) 
-      cat('Survey Title:', x$title, '\n')
-  if(!is.null(x$nickname))
-      cat('Survey Nickname:', x$nickname, '\n')
-  if(!is.null(x$id))
-    cat('ID:', x$id, '\n')
-  if(!is.null(x$language))
-    cat('Language:', x$language, '\n')
-  if(!is.null(x$question_count))
-    cat('No. of Questions:', x$question_count, '\n')
-  if(!is.null(x$response_count))
-    cat('Respondents:', x$response_count, '\n')
-  if(!is.null(x$preview))
-    cat('Preview URL:', x$preview, '\n')
-  if(!is.null(x$analyze_url))
-    cat('Analysis URL:', x$analyze_url, '\n')
-  if(!is.null(x$date_created))
-    cat('Date Created: ', x$date_created, '\n')
-  if(!is.null(x$date_modified))
-    cat('Date Modified:', x$date_modified, '\n')
-  if(!is.null(x$pages))
-    cat('Survey Pages:', length(x$pages), '\n')
-  invisible(x)    
-}
