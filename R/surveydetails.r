@@ -1,7 +1,7 @@
 surveydetails <- function(
     survey,
-    oauth_token = getOption('sm_oauth_token'),
     question_details = FALSE,
+    oauth_token = getOption('sm_oauth_token'),
     ...
 ){
     if(inherits(survey, 'sm_survey'))
