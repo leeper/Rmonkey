@@ -28,17 +28,8 @@ surveydetails <- function(
     structure(content, class = "sm_survey")
 }
 
-surveyquestions <- function(
-    survey,
-    details,
-    oauth_token = getOption('sm_oauth_token'),
-    ...
-){
-    if (!missing(survey)) {
-        d <- surveydetails(survey, oauth_token = getOption('sm_oauth_token'), question_details = TRUE, ...)
-    } else {
-        d <- details
-    }
+surveyquestions <- function(survey){
+    d <- surveydetails(survey, oauth_token = getOption('sm_oauth_token'), question_details = TRUE)
     questions <- unlist(unlist(lapply(d$pages, `[`, "questions"), recursive = FALSE), recursive = FALSE)
     n <- unname(unlist(lapply(questions, `[`, "id")))
     w <- unname(unlist(lapply(questions, `[`, "headings")))
@@ -46,6 +37,7 @@ surveyquestions <- function(
     structure(w, names = n, class = c("character", "sm_surveyquestions"))
 }
 
-surveypreview <- function(details) {
-    browseURL(details$preview)
+surveypreview <- function(survey) {
+    d <- surveydetails(survey, oauth_token = getOption('sm_oauth_token'), question_details = TRUE)
+    browseURL(d$preview)
 }
