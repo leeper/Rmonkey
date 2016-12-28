@@ -2,6 +2,14 @@ getresponses <- function(
     survey,
     collector = NULL,
     bulk = FALSE,
+    page = NULL,
+    per_page = NULL,
+    start_created_at = NULL,
+    end_created_at = NULL,
+    start_modified_at = NULL,
+    end_modified_at = NULL,
+    sort_order = 'ASC',
+    sort_by = 'date_modified',
     oauth_token = getOption('sm_oauth_token'),
     ...
 ){
@@ -28,9 +36,36 @@ getresponses <- function(
     } else {
         stop("Must specify 'oauth_token'")
     }
-    h <- add_headers(Authorization=token,
+  if (inherits(start_created_at, "POSIXct") | inherits(start_created_at, "Date")) {
+    start_created_at <- format(start_created_at, "%Y-%m-%d")
+  }
+  if (inherits(end_created_at, "POSIXct") | inherits(end_created_at, "Date")) {
+    end_created_at <- format(end_created_at, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+  }
+  if (inherits(start_modified_at, "POSIXct") | inherits(start_modified_at, "Date")) {
+    start_modified_at <- format(start_modified_at, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+  }
+  if (inherits(end_modified_at, "POSIXct") | inherits(end_modified_at, "Date")) {
+    end_modified_at <- format(end_modified_at, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+  }
+  # need to add error checking for status
+  b <- list(page = page, 
+            per_page = per_page,
+            start_created_at = start_created_at, 
+            end_created_at = end_created_at,
+            start_modified_at = start_modified_at,
+            end_modified_at = end_modified_at,
+            sort_order = sort_order, 
+            sort_by = sort_by)
+  nulls <- sapply(b, is.null)
+  if (all(nulls)) {
+    b <- '{}'
+  } else {
+    b <- toJSON(b[!nulls], auto_unbox = TRUE)
+  }  
+  h <- add_headers(Authorization=token,
                      'Content-Type'='application/json')
-    out <- GET(u, config = h, ...)
+    out <- GET(u, config = h, ..., body = b)
     stop_for_status(out)
     content <- parsed_content(out)
     if (!is.null(content$data)) {
