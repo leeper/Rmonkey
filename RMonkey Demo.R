@@ -50,9 +50,18 @@ sl
 sd1 <- surveydetails(sl[[1]])
 sd1
 
-# Get and display survey deatils including the details on the survey questions
+# Get and display survey deatils including the details of the survey questions
 sd1.q <- surveydetails(sl[[1]], question_details = TRUE)
 str(sd1.q)
 
-# Show the responses to a survey
+# Show just the questions for a survey
+sl1.q <- surveyquestions(sl[[1]])
+
+# Open browser to a web preview of the survey
+surveypreview(sl[[1]])
+
+# Show the list of response ids to a survey
 sl1.r <- getresponses(sl[[1]])
+
+# Show the expanded list of responses including answers to all questions
+sl1.rd <- getresponses(sl[[1]], bulk = TRUE)
