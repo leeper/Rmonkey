@@ -16,9 +16,9 @@ as.data.frame.sm_response <- function(x, row.names, optional, details = NULL, st
     questions <- do.call('c', lapply(details$pages, function(i) i[['questions']]))
     # `type` contains info about each question type
     qtypes <- sapply(questions, function(i) {
-        fam <- i$type$family
+        fam <- i$family
         if (fam == "matrix") {
-            setNames(paste0(fam, "_", i$type$subtype), i$question_id)
+            setNames(paste0(fam, "_", i$subtype), i$id)
         } else {
             setNames(fam, i$question_id)
         }
@@ -26,7 +26,7 @@ as.data.frame.sm_response <- function(x, row.names, optional, details = NULL, st
     # set variable names
     varnames <- sapply(questions, function(i) {
         # `heading` is the display text
-        setNames(i$heading, i$question_id)
+        setNames(i$heading, i$id)
     })
     
     # extract all answers from the `answers` elements of each subelement of `question`
