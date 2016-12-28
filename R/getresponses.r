@@ -33,15 +33,10 @@ getresponses <- function(
     out <- GET(u, config = h, ...)
     stop_for_status(out)
     content <- parsed_content(out)
-    # if (content$status != 0) {
-    #     warning("An error occurred: ",content$errmsg)
-    #     return(content)
-    # } else {
     if (!is.null(content$data)) {
         lapply(content$data, `class<-`, "sm_response")
-        # content$data <- lapply(content$data, `attr<-`, 'survey_id', survey)
     }
-    return(structure(content, class = 'sm_response_list'))
+    structure(content, class = 'sm_response_list')
 }
 
 print.sm_response <- function(x, ...){
