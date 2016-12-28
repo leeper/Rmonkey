@@ -5,7 +5,7 @@ Title: A Survey Monkey R Client
 Authors@R: c(person("Thomas J.", "Leeper", role = c("aut", "cre"),
                     email = "thosjleeper@gmail.com"),
              person("Sean", "Fahey", role = "ctb", 
-                    email = 'seanmfahey@yahoo.com),
+                    email = "seanmfahey@yahoo.com"),
              person("Kevin", "Little", role = "ctb", 
                     email = "klittle@iecodesign.com"),
              person("David", "Robinson", role = "ctb", 
