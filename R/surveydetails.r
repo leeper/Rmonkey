@@ -38,7 +38,7 @@ surveyquestions <- function(survey){
 }
 
 surveypreview <- function(survey) {
-    d <- surveydetails(survey, oauth_token = getOption('sm_oauth_token'), question_details = TRUE)
+    d <- surveydetails(survey, oauth_token = getOption('sm_oauth_token'))
     browseURL(d$preview)
 }
 
