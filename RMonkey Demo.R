@@ -35,9 +35,9 @@ options(sm_secret = 'YourAPISecret')
 smlogin()
 
 # Lookup userdetails to test API
-users <- userdetails()
+userdetails()
 
-# Show a list of surveys
+# Return a list of surveys
 sl <- surveylist()
 
 # Display the list of surveys
@@ -48,7 +48,11 @@ sl
 # Get and display more details for the first survey on the list
 # (This uses the same print.sm_survey function but has more data to display)
 sd1 <- surveydetails(sl[[1]])
+sd1
 
 # Get and display survey deatils including the details on the survey questions
 sd1.q <- surveydetails(sl[[1]], question_details = TRUE)
+str(sd1.q)
 
+# Show the responses to a survey
+sl1.r <- getresponses(sl[[1]])
