@@ -20,7 +20,7 @@ surveydetails <- function(
                      'Content-Type'='application/json')
     out <- GET(u, config = h, ...)
     stop_for_status(out)
-    content <- parsed_content(out)
+    content <- content(out, as = 'parsed')
     # if(content$status != 0) {
     #     warning("An error occurred: ",content$errmsg)
     #     return(content)
