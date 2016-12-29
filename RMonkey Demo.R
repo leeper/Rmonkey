@@ -10,6 +10,7 @@
 # load needed libraries
 library(curl)
 library(httr)
+library(jsonlite)
 
 # Load the latest Rmonkey library from github
 if(!require("devtools")) {
@@ -56,12 +57,16 @@ str(sd1.q)
 
 # Show just the questions for a survey
 sl1.q <- surveyquestions(sl[[1]])
+sl1.q
 
 # Open browser to a web preview of the survey
 surveypreview(sl[[1]])
 
 # Show the list of response ids to a survey
 sl1.r <- getresponses(sl[[1]])
+sl1.r$data
 
 # Show the expanded list of responses including answers to all questions
 sl1.rd <- getresponses(sl[[1]], bulk = TRUE)
+
+
