@@ -67,7 +67,7 @@ getresponses <- function(
                      'Content-Type'='application/json')
     out <- GET(u, config = h, ..., body = b)
     stop_for_status(out)
-    content <- parsed_content(out)
+    content <- content(out, as = 'parsed')
     if (!is.null(content$data)) {
         lapply(content$data, `class<-`, "sm_response")
     }
