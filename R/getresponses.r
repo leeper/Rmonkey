@@ -1,3 +1,52 @@
+# getresponses.r
+#
+# This function returns details on SurveyMonkey responses
+#
+# get a set of bulk responses (this will get 50 responses with the following structure:
+# $per_page        : int  = total number of responses per page
+# $total           : int  = number of survey responses
+# $data            : list = list with data for each survey response
+# $data[[x]]       : list = individual survey response
+#   $total_time   : int  = time spent on the survey
+#   $href         : chr  = api url for survey response
+#   $custom_variables  : list = custom variables for respondents
+#   $ip_address : chr  = IP address for respondent
+#   $id : chr = id of survey response
+#   $logic_path : list
+#   $date_modified : chr = date survey response last modified
+#   $response_status : chr = status of response {completed, partial, etc...}
+#   $custom_value : chr = ?
+#   $analyze_url : chr = web browsable url to view responses
+#   $pages : list = list with data for questions and answers on each survey page
+#     $id : chr = id
+#     $ questions : list
+#       $ id : chr = id
+#       $ answers : list
+#         $ choice_id : chr = id of answer choice
+#   $page_path : list = ?
+#   $recipient_id : chr = id of survey recipient
+#   $collector_id : chr = id of survey collector
+#   $date_created : chr = date the survey response was started
+#   $survey_id : chr = id of the survey
+#   $collection_mode : chr = ?
+#   $edit_url : chr = web browsable url to modify responses
+#   $metadata : list = list with additional information about respondent
+#     $contact : list 
+#     $contact$first_name : list
+#     $contact$first_name$type : chr = type for first_name$value variable
+#     $contact$first_name$value : chr = respondent first name
+#     $contact$last_name : list
+#     $contact$last_name$type : chr = type for last_name$value variable
+#     $contact$lasy_name$value : chr = respondent last name
+#     $contact$email : list
+#     $contact$email$type : chr = type for email variable
+#     $contact$email$value : chr = respondent email address
+# $page      : int  = page of responses
+# $links     : list = urls for the previous ($last), current ($self) and next ($next) response pages
+# )
+
+
+
 getresponses <- function(
     survey,
     collector = NULL,
@@ -82,26 +131,26 @@ print.sm_response <- function(x, ...){
 }
 
 
-getallresponses <- function(
-    survey,
-    collector = NULL,
-    oauth_token = getOption('sm_oauth_token'),
-    wait = 0,
-    ...
-) {
-    r <- respondentlist(survey, api_key = api_key, oauth_token = oauth_token, ...)
-    Sys.sleep(wait)
-    respondents <- unname(sapply(r, `[`, "respondent_id"))
-    Sys.sleep(wait)
-    n <- ceiling(length(respondents)/100)
-    w <- split(1:length(respondents), rep(1:n, each = 100)[1:length(respondents)])
-    out <- list()
-    for (i in seq_len(n)) {
-        out <- c(out, getresponses(unlist(respondents[w[[i]]]), survey = survey, 
-                                   api_key = api_key, oauth_token = oauth_token, ...))
-        Sys.sleep(wait)
-    }
-    class(out) <- 'sm_response_list'
-    d <- surveydetails(survey, api_key = api_key, oauth_token = oauth_token, ...)
-    as.data.frame(out, details = d)
-}
+# getallresponses <- function(
+#     survey,
+#     collector = NULL,
+#     oauth_token = getOption('sm_oauth_token'),
+#     wait = 0,
+#     ...
+# ) {
+#     r <- respondentlist(survey, api_key = api_key, oauth_token = oauth_token, ...)
+#     Sys.sleep(wait)
+#     respondents <- unname(sapply(r, `[`, "respondent_id"))
+#     Sys.sleep(wait)
+#     n <- ceiling(length(respondents)/100)
+#     w <- split(1:length(respondents), rep(1:n, each = 100)[1:length(respondents)])
+#     out <- list()
+#     for (i in seq_len(n)) {
+#         out <- c(out, getresponses(unlist(respondents[w[[i]]]), survey = survey, 
+#                                    api_key = api_key, oauth_token = oauth_token, ...))
+#         Sys.sleep(wait)
+#     }
+#     class(out) <- 'sm_response_list'
+#     d <- surveydetails(survey, api_key = api_key, oauth_token = oauth_token, ...)
+#     as.data.frame(out, details = d)
+# }
