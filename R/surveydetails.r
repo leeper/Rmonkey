@@ -24,14 +24,24 @@
 #     $ display_options : list
 #       $ show_display_number : logical 
 #     $ sorting : 
-#     $ family : chr = general style of question
-#     $ subtype : chr = detailed style of question
+#       $ type : (e..g, random)
+#       $ ignore_last
+#     $ family : chr = general style of question (e.g., matrix, single-choice)
+#     $ subtype : chr = detailed style of question (e.g., single)
 #     $ required :
 #       $ text: chr = text to display if not answered(?)
 #       $ amount : chr = 
 #       $ type : chr = ?
 #     $ answers : list
+#       $ rows :  list = used in matrix questions to store row headings
+#         $ visible
+#         $ text
+#         $ position
+#         $ id
 #       $ choices : list
+#         $ description : chr = (used in matrix questions?)
+#         $ weight : int = (used in matrix questions?)
+#         $ is_na : logical = (used in matrix questions?)
 #         $ visible : logical 
 #         $ text : chr = answerchoice text
 #         $ position : int = answerchoice position
