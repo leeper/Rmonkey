@@ -1,3 +1,21 @@
+#' surveylist
+#'
+#' Obtains a list of surveys for a SurveyMonkey account.
+#'
+#' This function calls the SurveyMonkey API using the current oauth token and returns
+#' a list of surveys based on the parameters entered.
+#'
+#' @param page Integer numebr to select which page of resources to return. By default is 1.
+#' @param per_page Integer number to set the number of surveys to return per page.  By default, is 50 surveys per page.
+#' @param sort_by String used to sort returned survey list: ‘title’, 'date_modified’, or 'num_responses’. By default, date_modified.
+#' @param sort_order String used to set the sort order for returned surveys: 'ASC’ or 'DESC’. By default, DESC.
+#' @param start_modified_at Date string used to select surveys last modified after this date. By default is NULL.
+#' @param end_modified_at Date string used to select surveys modified before this date.  By default is NULL.
+#' @param title String used to select survey by survey title.  By default is NULL.
+#' @param include Comma separated strings used to filter survey list: 'shared_with’, 'shared_by’, or 'owned’ (useful for teams) or to specify additional fields to return per survey: 'response_count’, 'date_created’, 'date_modified’, 'language’, 'question_count’, 'analyze_url’, 'preview’.  By default is NULL.
+#' @param oauth_token The SurveyMonkey App oauth_token stored in the environment.
+#' @return sm_surveylist
+
 surveylist <- function(
     page = NULL,
     per_page = NULL,
@@ -38,6 +56,6 @@ surveylist <- function(
     out <- GET(u, config = h, ..., query = b)
     stop_for_status(out)
     content <- content(out, as = 'parsed')
-    lapply(content$data, `class<-`, 'sm_survey')
-    
+    sl <- content$data
+    lapply(sl, `class<-`, 'sm_survey')
 }
