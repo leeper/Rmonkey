@@ -10,8 +10,8 @@
 
 #' @param client_id Your SurveyMonkey App client_id. By default, retrieved from \code{getOption('sm_client_id')}.
 #' @param secret Your API secret key. By default, retrieved from \code{getOption('sm_secret')}.
-#' @param redirect_uri Default value is \samp{http://localhost:1410}. No other value is allowed. This must be the redirect URL registered for your application in your Survey Monkey developer account.
-#' @param response_type Default value is \dQuote{code}. No other values are allowed.
+#' @param redirect_uri Default value is \url{http://localhost:1410}. No other value is allowed. This must be the redirect URL registered for your application in your Survey Monkey developer account.
+#' @param response_type Default value is \code{code}. No other values are allowed.
 #' @return oauth_token
 
 smlogin <- function(client_id = getOption('sm_client_id'),

@@ -13,20 +13,20 @@ smlogin(client_id = getOption("sm_client_id"),
 
 \item{secret}{Your API secret key. By default, retrieved from \code{getOption('sm_secret')}.}
 
-\item{redirect_uri}{Default value is \samp{http://localhost:1410}. No other value is allowed. This must be the redirect URL registered for your application in your Survey Monkey developer account.}
+\item{redirect_uri}{Default value is \url{http://localhost:1410}. No other value is allowed. This must be the redirect URL registered for your application in your Survey Monkey developer account.}
 
-\item{response_type}{Default value is \dQuote{code}. No other values are allowed.}
+\item{response_type}{Default value is \code{code}. No other values are allowed.}
 }
 \value{
 oauth_token
 }
 \description{
-obtains a long lasting oauth token for API access.
+Obtains a long lasting oauth token for API access.
 }
 \details{
 This function takes as input a SurveyMonkey API account client ID and
 secret code and conducts the oauth2 authentication process to return
 an oauth token.  The client_id and secret values can be obtained from the settings
-section of the appropriate SurveyMonkey apps page https://developer.surveymonkey.com/apps/
+section of the appropriate SurveyMonkey apps page at https://developer.surveymonkey.com/apps/
 }
 
