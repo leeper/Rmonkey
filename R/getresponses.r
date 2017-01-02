@@ -5,8 +5,7 @@
 # get a set of bulk responses (this will get 50 responses with the following structure:
 # $per_page        : int  = total number of responses per page
 # $total           : int  = number of survey responses
-# $data            : list = list with data for each survey response
-# $data[[x]]       : list = individual survey response
+# $data[[x]]       : list = list with an entry for each individual survey response
 #   $total_time   : int  = time spent on the survey
 #   $href         : chr  = api url for survey response
 #   $custom_variables  : list = custom variables for respondents
@@ -83,10 +82,10 @@ getresponses <- function(
     if (!is.null(oauth_token)) {
         token <- paste('bearer', oauth_token)
     } else {
-        stop("Must specify 'oauth_token'")
+        stop("Must specify 'oauth_token', Try using smlogin() first.")
     }
   if (inherits(start_created_at, "POSIXct") | inherits(start_created_at, "Date")) {
-    start_created_at <- format(start_created_at, "%Y-%m-%d")
+    start_created_at <- format(start_created_at, "%Y-%m-%d %H:%M:%S", tz = "UTC")
   }
   if (inherits(end_created_at, "POSIXct") | inherits(end_created_at, "Date")) {
     end_created_at <- format(end_created_at, "%Y-%m-%d %H:%M:%S", tz = "UTC")
@@ -108,19 +107,20 @@ getresponses <- function(
             sort_by = sort_by)
   nulls <- sapply(b, is.null)
   if (all(nulls)) {
-    b <- '{}'
+    b <- NULL
   } else {
-    b <- toJSON(b[!nulls], auto_unbox = TRUE)
+    b <- b[!nulls]
   }  
   h <- add_headers(Authorization=token,
                      'Content-Type'='application/json')
-    out <- GET(u, config = h, ..., body = b)
+    out <- GET(u, config = h, ..., query = b)
     stop_for_status(out)
     content <- content(out, as = 'parsed')
     if (!is.null(content$data)) {
         lapply(content$data, `class<-`, "sm_response")
     }
     structure(content, class = 'sm_response_list')
+    return(content$data)
 }
 
 print.sm_response <- function(x, ...){
@@ -130,27 +130,3 @@ print.sm_response <- function(x, ...){
     invisible(x)
 }
 
-
-# getallresponses <- function(
-#     survey,
-#     collector = NULL,
-#     oauth_token = getOption('sm_oauth_token'),
-#     wait = 0,
-#     ...
-# ) {
-#     r <- respondentlist(survey, api_key = api_key, oauth_token = oauth_token, ...)
-#     Sys.sleep(wait)
-#     respondents <- unname(sapply(r, `[`, "respondent_id"))
-#     Sys.sleep(wait)
-#     n <- ceiling(length(respondents)/100)
-#     w <- split(1:length(respondents), rep(1:n, each = 100)[1:length(respondents)])
-#     out <- list()
-#     for (i in seq_len(n)) {
-#         out <- c(out, getresponses(unlist(respondents[w[[i]]]), survey = survey, 
-#                                    api_key = api_key, oauth_token = oauth_token, ...))
-#         Sys.sleep(wait)
-#     }
-#     class(out) <- 'sm_response_list'
-#     d <- surveydetails(survey, api_key = api_key, oauth_token = oauth_token, ...)
-#     as.data.frame(out, details = d)
-# }
