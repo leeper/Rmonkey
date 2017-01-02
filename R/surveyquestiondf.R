@@ -6,7 +6,7 @@ surveyquestiondf <- function(survey) {
   sd <- surveydetails(survey, question_details = TRUE)
   survey_id <- survey$id
   questions <-
-    do.call('c', lapply(details$pages, function(i)
+    do.call('c', lapply(sd$pages, function(i)
       i[['questions']]))
   for (i in questions) {
     question_id <- i$id
