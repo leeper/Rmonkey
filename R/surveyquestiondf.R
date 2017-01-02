@@ -4,7 +4,7 @@
 surveyquestiondf <- function(survey) {
   df <- data.frame()
   sd <- surveydetails(survey, question_details = TRUE)
-  survey_id <- survey$id
+  survey_id <- sd$id
   questions <-
     do.call('c', lapply(sd$pages, function(i)
       i[['questions']]))
@@ -12,7 +12,8 @@ surveyquestiondf <- function(survey) {
     question_id <- i$id
     question_type <- i$family
     question_subtype <- i$subtype
-    question_text <- i$heading
+    question_text <- gsub("<.*?>", "",unlist(i$heading))
+    
     j <- 0
     # use a repeat loop to account for cases where there are no answer rows
     repeat {
