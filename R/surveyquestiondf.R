@@ -6,8 +6,6 @@ surveyquestiondf <- function(survey) {
   sd <- surveydetails(survey, question_details = TRUE)
   questions <- do.call('c', lapply(details$pages, function(i) i[['questions']]))
 
-  
-  
   # answerrows <- do.call('c', lapply(questions, function(i) i[['answers']][['rows']]))
   # answerchoices <- answerchoices <- do.call('c', lapply(questions, function(i) i[['answers']][['choices']]))
   
@@ -29,27 +27,19 @@ surveyquestiondf <- function(survey) {
     family <- i$family
     subtype <- i$subtype
     heading <- i$heading
-    if (!is.null(i$answer$rows)) {
-      for (j in i$answer$rows) {
-        row_id <- j$id
-        row_text <- j$text
-        newrow <-
-          data.frame(
-            id,
-            row_id,
-            family,
-            subtype,
-            heading,
-            row_text,
-            stringsAsFactors = FALSE,
-            check.rows = FALSE
-          )
-        df <- rbind(df, newrow)
+    j <- 0
+    # use a repeat loop to account for cases where there are no answer rows 
+    repeat {        
+      j <- j + 1     # increment the index first for array indexing
+      if (is.null(i$answers$rows)) {
+        row_id <- NA
+        row_text <- NA
+      } else {
+        row_id <- i$answers$rows[[j]]$id
+        row_text <- i$answers$rows[[j]]$text
       }
-    } else {
-      row_id <- NA
-      row_text <- NA
-      newrow <- data.frame(
+      newrow <-
+        data.frame(
           id,
           row_id,
           family,
@@ -60,6 +50,7 @@ surveyquestiondf <- function(survey) {
           check.rows = FALSE
         )
       df <- rbind(df, newrow)
+      if (j >= length(i$answers$rows)) {break}
     }
   }
   return(df)
