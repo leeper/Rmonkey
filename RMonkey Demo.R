@@ -43,28 +43,37 @@ userdetails()
 
 ### SURVEY FUNCTIONS
 
-# Return a list of surveys
+# Get and display a list of surveys
 sl <- surveylist()
+# print the sm_survey object using the print.sm_survey function
+sl
+# show the structure of the sm_survey object
+str(sl[[1]])
 
 # Return a specific list of surveys
 sl <- surveylist(per_page = 100, sort_by = 'num_responses', sort_order = 'desc')
+sl
 
 # Return surveys that have been modified since a certain date
 sl <- surveylist(start_modified_at = '2016-12-25')
-
-# Display the list of surveys
-# (This shows each survey using the print.sm_survey function which overrides the standard
-# print function)
 sl
 
-# Get and display more details for the first survey on the list
-# (This uses the same print.sm_survey function but has more data to display)
-sd1.q <- surveydetails(sl[[1]])
-sd1.q
 
 # Get and display survey deatils without the details of the survey questions
-sd1 <- surveydetails(sl[[1]], question_details = FALSE)
-str(sd1)
+s1.d <- surveydetails(sl[[1]], question_details = FALSE)
+# (This uses the same print.sm_survey function but has more data to display)
+s1.d
+# show the expanded details for the survey 
+str(s1.d)
+
+
+# Get and display more details for the first survey on the list
+s1.dq <- surveydetails(sl[[1]])
+# show the survey summary
+s1.dq
+# show the expanded details for the survey with all the question data
+str(s1.dq)
+
 
 # Show just the questions for a survey
 sl1.q <- surveyquestions(sl[[1]])
@@ -75,6 +84,7 @@ surveypreview(sl[[1]])
 
 # Get a dataframe with details on each question in the survey
 s1_df <- surveyquestiondf(sl[[1]])
+str(s1_df)
 
 ### SURVEY RESPONSE FUNCTIONS
 
