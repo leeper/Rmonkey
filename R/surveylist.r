@@ -31,12 +31,9 @@ surveylist <- function(
         b <- toJSON(b[!nulls], auto_unbox = TRUE)
     h <- add_headers(Authorization=token,
                      'Content-Type'='application/json')
-    out <- GET(u, config = h, ..., body = b)
+    out <- GET(u, config = h, ..., query = b)
     stop_for_status(out)
     content <- content(out, as = 'parsed')
-    # if(content$status != 0){
-    #     warning("An error occurred: ",content$errmsg)
-    #     return(content)
-    # } else 
     lapply(content$data, `class<-`, 'sm_survey')
+    
 }
