@@ -1,12 +1,12 @@
 surveylist <- function(
     page = NULL,
-    page_size = NULL,
-    start_date = NULL,
-    end_date = NULL,
+    per_page = NULL,
+    sort_by = NULL,
+    sort_order = NULL,
+    start_modified_at = NULL,
+    end_modified_at = NULL,
     title = NULL,
-    recipient_email = NULL,
-    order_asc = NULL,
-    fields = NULL,
+    include = NULL,
     oauth_token = getOption('sm_oauth_token'),
     ...
 ){
@@ -16,19 +16,23 @@ surveylist <- function(
     }
     else
         stop("Must specify 'oauth_token'")
-    if(inherits(start_date, "POSIXct") | inherits(start_date, "Date"))
-        start_date <- format(start_date, "%Y-%m-%d %H:%M:%S", tz = "UTC")
-    if(inherits(end_date, "POSIXct") | inherits(end_date, "Date"))
-        end_date <- format(end_date, "%Y-%m-%d %H:%M:%S", tz = "UTC")
-    b <- list(page = page, page_size = page_size,
-              start_date = start_date, end_date = end_date,
-              title = title, recipient_email = recipient_email,
-              order_asc = order_asc, fields = as.list(fields))
+    if(inherits(start_modified_at, "POSIXct") | inherits(start_modified_at, "Date"))
+      start_modified_at <- format(start_modified_at, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+    if(inherits(end_modified_at, "POSIXct") | inherits(end_modified_at, "Date"))
+      end_modified_at <- format(end_modified_at, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+    b <- list(    page = page,
+                  per_page = per_page,
+                  sort_by = sort_by,
+                  sort_order = sort_order,
+                  start_modified_at = start_modified_at,
+                  end_modified_at = end_modified_at,
+                  title = title,
+                  include = include)
     nulls <- sapply(b, is.null)
     if(all(nulls))
-        b <- '{}'
+        b <- NULL
     else
-        b <- toJSON(b[!nulls], auto_unbox = TRUE)
+        b <- b[!nulls]
     h <- add_headers(Authorization=token,
                      'Content-Type'='application/json')
     out <- GET(u, config = h, ..., query = b)
