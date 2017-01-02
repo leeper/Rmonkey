@@ -11,6 +11,7 @@
 library(curl)
 library(httr)
 library(jsonlite)
+library(dplyr)
 
 # Load the latest Rmonkey library from github
 if(!require("devtools")) {
@@ -79,7 +80,7 @@ s1_df <- surveyquestiondf(sl[[1]])
 
 # Show the list of response ids to a survey
 s1.r <- getresponses(sl[[1]])
-s1.r$data
+s1.r
 
 # Show the expanded list of responses including answers to all questions
 s1.rd <- getresponses(sl[[1]], bulk = TRUE)
@@ -89,5 +90,4 @@ s1.r_df <- as.data.frame.surveyresponses(sl[[1]])
 str(s1.r_df)
 
 # Join response data with question data to decode responses 
-library(dplyr)
 s1.r_decode <- left_join (s1.r_df, s1_df)
