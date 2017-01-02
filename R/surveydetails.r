@@ -66,7 +66,7 @@
 
 surveydetails <- function(
     survey,
-    question_details = FALSE,
+    question_details = TRUE,
     oauth_token = getOption('sm_oauth_token'),
     ...
 ){
@@ -81,16 +81,12 @@ surveydetails <- function(
       token <- paste('bearer', oauth_token)
     }
     else
-        stop("Must specify 'oauth_token'")
+        stop("Must specify 'oauth_token'.  Try using smlogin() first.")
     h <- add_headers(Authorization=token,
                      'Content-Type'='application/json')
     out <- GET(u, config = h, ...)
     stop_for_status(out)
     content <- content(out, as = 'parsed')
-    # if(content$status != 0) {
-    #     warning("An error occurred: ",content$errmsg)
-    #     return(content)
-    # } else
     structure(content, class = "sm_survey")
 }
 
@@ -133,3 +129,4 @@ print.sm_survey <- function(x, ...){
     cat('Survey Pages:', length(x$pages), '\n')
   invisible(x)    
 }
+
