@@ -13,6 +13,7 @@
 #' @param redirect_uri Default value is \url{http://localhost:1410}. No other value is allowed. This must be the redirect URL registered for your application in your Survey Monkey developer account.
 #' @param response_type Default value is \code{code}. No other values are allowed.
 #' @return oauth_token
+#' @export smlogin
 
 smlogin <- function(client_id = getOption('sm_client_id'),
                     secret = getOption('sm_secret'),
