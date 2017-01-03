@@ -1,0 +1,1054 @@
+q()
+install.packages(c('repr','pbdZMQ','devtools'))
+devtools::install_github(c('IRkernal/IRdisplay','IRkernal/IRkernal'))
+devtools::install_github(c('IRkernel/IRdisplay','IRkernel/IRkernal'))
+devtools::install_github(c('IRkernel/IRdisplay','IRkernel/IRkernel'))
+q()
+# Admit to Net Enroll Model with Caret#
+##
+# Sean Fahey#
+# 2016-08-12#
+##
+# This script uses the Caret package to make and compare admit to net enroll models#
+##
+#
+#################
+##
+# CONFIGURE ENVIRONMENT#
+##
+##################
+#
+# This is designed to be run in the /Student Lifecycle/Admit to Net Enroll directory#
+getwd()#
+#
+# Load needed libraries#
+library(plyr) # this is here to make sure it loads before dplyr#
+library(dplyr)#
+### BUILD DATASET#
+#
+# load base dataset#
+load("../../data/tidy_data/Inquiry Lifecycle Admits 2014- Tidy.RData")#
+#
+# join the ESperformance dataset#
+load("../../data/tidy_data/ESPerformanceData.RData")#
+mdata %>% left_join(inquiriesByOwner) -> mdata#
+#
+### PREPARE MODLING DATASET#
+#
+# Select only the variables to be used for the model#
+mdata1 <- select(mdata, application_university_name, md_degree_level, application_program_area, gpa__c, application_decision_original, application_has_pushed, application_is_program_switch, has_gpa, vel_inq_to_app, vel_app_to_admit, fa_prob, has_loi, student_age_at_startdate, marital_status__c, inquiry_channel_group, x_is_international, application_is_full_scholarship, scholarship_total__c, FID.monthNumber, ES_pct_admit_to_netenroll, x_is_net_enroll, x_is_cancelled_enroll, sf_app_id)#
+#
+# Generate factors for variables#
+mdata1$application_program_area <- as.factor(mdata1$application_program_area)#
+mdata1$application_decision_original <- as.factor(mdata1$application_decision_original)#
+mdata1$marital_status__c[mdata1$marital_status__c == '']<- 'Unknown'#
+mdata1$marital_status__c[is.na(mdata1$marital_status__c)]<- 'Unknown'#
+mdata1$marital_status__c <- as.factor(mdata1$marital_status__c)#
+mdata1$FID.monthNumber <- as.factor(mdata1$FID.monthNumber)#
+#
+# show the number of NAs#
+sapply(mdata1, function(x) sum(is.na(x)))#
+#
+## IMPUTE MISSING DATA#
+#
+# impute missing GPA data as the mean #
+mdata1$gpa__c[is.na(mdata1$gpa__c)]<- mean(mdata1$gpa__c, na.rm=T)#
+#
+# impute missing ES percent admit to net enroll#
+mdata1$ES_pct_admit_to_netenroll[is.na(mdata1$ES_pct_admit_to_netenroll)]<- mean(mdata1$ES_pct_admit_to_netenroll, na.rm=T)#
+#
+# impute missing app to start data as the mean #
+mdata1$inquiry_channel_group <- as.factor(mdata1$inquiry_channel_group)#
+mdata1$x_is_international <- ifelse(mdata1$x_is_international== 1, 'International', 'US/Canada') #
+mdata1$x_is_international <- as.factor(mdata1$x_is_international)#
+#
+ # create a text outcome variable#
+mdata1$outcome <- NA#
+mdata1$outcome[mdata1$x_is_net_enroll == 1] <- 'Enrolled'#
+mdata1$outcome[mdata1$x_is_cancelled_enroll == 1] <- 'Cancelled'#
+mdata1$outcome<-as.factor(mdata1$outcome)#
+mdata1$x_is_net_enroll <- NULL # we remove the integer flag since we have the outcome variable#
+mdata1$x_is_cancelled_enroll <- NULL # we remove the integer flag since we have the outcome variable#
+# show the number of NAs#
+sapply(mdata1, function(x) sum(is.na(x)))#
+#
+mdata1 <- mdata1[complete.cases(mdata1),]  # This removes cases with NAs to ensure the caret predictions work#
+str(mdata1)#
+### CREATE TRAINING AND TEST DATA PARTITIONS#
+#
+library(caret) # This is a useful ML library we will be using that has a handy function for creating data partitions#
+set.seed(1234) # pick a specific random seed so the results can be recreated#
+intrain<-createDataPartition(y=mdata1$outcome,p=0.7,list=FALSE)#
+training<-mdata1[intrain,]#
+testing<-mdata1[-intrain,]#
+#
+# Set the machine learning cross validation training rules#
+#
+fitControl_cv <- trainControl(## 5-fold CV, repeated 3 times#
+                           method = "repeatedcv",#
+                           number = 5,#
+                           repeats = 3, #
+                           classProbs = TRUE,#
+                           summaryFunction = twoClassSummary)#
+## DECISION TREE MODEL#
+#
+# Train the model                #
+rpart_cv <- train(outcome ~ ., data = select(training,  -sf_app_id),#
+                 method = "rpart",#
+                 trControl = fitControl_cv,#
+                 metric = "ROC")#
+#
+# Show how well the model performed on the training data#
+confusionMatrix(predict(rpart_cv),training$outcome, positive = "Enrolled")#
+# Predict the outcomes for the test data set#
+rpart_cv.pred <- predict(rpart_cv, newdata = select(testing, -sf_app_id))#
+#
+# Show how well the model performed on the testing data#
+confusionMatrix(rpart_cv.pred,testing$outcome, positive = "Enrolled")#
+## GRADIENT BOOSTING MACHINE#
+#
+# Train the model                #
+gbm_cv <- train(outcome ~ ., data =  select(training,  -sf_app_id),#
+                 method = "gbm",#
+                 trControl = fitControl_cv,#
+                 metric = "ROC")#
+#
+# Show how well the model performed on the training data#
+confusionMatrix(predict(gbm_cv),training$outcome, positive = "Enrolled")#
+# Predict the outcomes for the test data set#
+gbm_cv.pred <- predict(gbm_cv, newdata = select(testing, -sf_app_id))#
+#
+# Show how well the model performed on the testing data#
+confusionMatrix(gbm_cv.pred,testing$outcome, positive = "Enrolled")#
+#
+# ## GENERALIZED LINEAR MACHINE#
+#
+# # Train the model                #
+# glm_cv_cs <- train(outcome ~ ., data =  select(training,  -sf_app_id),#
+                 # method = "glm",#
+                 # trControl = fitControl_cv,#
+                 # preProcess = c("center", "scale"),#
+                 # metric = "ROC")#
+#
+# # Show how well the model performed on the training data#
+# confusionMatrix(predict(glm_cv_cs),training$outcome, positive = "Enrolled")#
+# # Predict the outcomes for the test data set#
+# glm_cv_cs.pred <- predict(glm_cv_cs, newdata = select(testing, -sf_app_id))#
+#
+# # Show how well the model performed on the testing data#
+# confusionMatrix(glm_cv_cs.pred,testing$outcome, positive = "Enrolled")#
+#
+## GRADIENT BOOSTING MACHINE WITH PREPROCESSING#
+#
+# Train the model                #
+gbm_cv_cs <- train(outcome ~ ., select(training,  -sf_app_id),#
+                 method = "gbm",#
+                 trControl = fitControl_cv,#
+                 preProcess = c("center", "scale"),#
+                 metric = "ROC")#
+#
+# Show how well the model performed on the training data#
+confusionMatrix(predict(gbm_cv_cs),training$outcome, positive = "Enrolled")#
+# Predict the outcomes for the test data set#
+gbm_cv_cs.pred <- predict(gbm_cv_cs, newdata = select(testing, -sf_app_id))#
+#
+# Show how well the model performed on the testing data#
+confusionMatrix(gbm_cv_cs.pred,testing$outcome, positive = "Enrolled")#
+#
+# # SUPPORT VECTOR MACHINE#
+#
+# Train the model                #
+# svm_cv <- train(outcome ~ ., data =  select(training,  -sf_app_id),#
+                 # method = "svmLinear2",#
+                 # trControl = fitControl_cv,#
+                 # metric = "ROC")#
+#
+# Show how well the model performed on the training data#
+# confusionMatrix(predict(svm_cv),training$outcome, positive = "Enrolled")#
+# Predict the outcomes for the test data set#
+# svm_cv.pred <- predict(svm_cv, newdata = select(testing, -sf_app_id))#
+#
+# Show how well the model performed on the testing data#
+# confusionMatrix(svm_cv.pred,testing$outcome, positive = "Enrolled")#
+#
+# # NEURAL NETWORK#
+#
+# Train the model                #
+# nnet_cv <- train(outcome ~ ., data =  select(training,  -sf_app_id),#
+                 # method = "nnet",#
+                 # trControl = fitControl_cv,#
+                 # metric = "ROC")#
+#
+# Show how well the model performed on the training data#
+# confusionMatrix(predict(nnet_cv),training$outcome, positive = "Enrolled")#
+# Predict the outcomes for the test data set#
+# nnet_cv.pred <- predict(nnet_cv, newdata = select(testing, -sf_app_id))#
+#
+# Show how well the model performed on the testing data#
+# confusionMatrix(nnet_cv.pred,testing$outcome, positive = "Enrolled")#
+## MODEL COMPARISON#
+#
+# results <- resamples(list(GBM=gbm_cv, GBM_cs = gbm_cv_cs, RPART=rpart_cv, NNET = nnet_cv, SVM = svm_cv))#
+results <- resamples(list(GBM_cs=gbm_cv_cs, GBM = gbm_cv, RPART=rpart_cv))#
+summary(results)#
+bwplot(results)
+q()
+? read.csv
+q()
+ls()
+rm(list = ls())
+ls()
+q()
+ip <- installed.packages()
+pkgs.to.remove <- ip[!(ip[,"Priority"] %in% c("base", "recommended")), 1]
+sapply(pkgs.to.remove, remove.packages)
+q()
+update9)
+update()
+# Inquiry to Net Enroll Model Development#
+##
+# Sean Fahey#
+# 2016-06-16#
+##
+# This script develops and compares models for predicting the likelihood that an inquiry will net enroll including both internal inquiry lifecycle view data as well#
+# as external zip code data#
+##
+#
+#################
+##
+# CONFIGURE ENVIRONMENT#
+##
+##################
+# set working directory#
+getwd()#
+# setwd("/Users/sean.fahey/Google Drive/Analytics and Data/Modeling/Inquiry to Enroll/code/")#
+# load needed packages#
+library(dplyr)#
+library(caret)#
+library(zipcode)#
+library (ROCR)#
+source("modelAssess.R")#
+################
+##
+# GET RAW DATA#
+##
+################
+#
+### Comment out either the Query or Load line#
+#
+# Option 1 - Query DB for raw data#
+# source("../rawData/All Inquiries (De-ID) 2014-.R", echo=TRUE)#
+#
+# Optiona 1a - Save the raw data for later offline analysis#
+# save(data, file="../rawData/All Inquiries (De-ID) with zip 2014- Raw.RData")#
+# write.csv(data, file = "../rawData/All Inquiries (De-ID) with zip 2014- Raw.csv")#
+# Option 2 - Load saved raw data#
+# load(file="../rawData/All Inquiries (De-ID) with zip 2013- Raw.RData")#
+################
+##
+# GET TIDY DATA#
+##
+################
+#
+# Option 1 - Run Script to prepare raw data for modeling#
+# source("../tidyData/Inquiry Lifecycle Query Prep.R", echo=TRUE)#
+#
+# Option 1a - Save tidy data for later offline analysis#
+# save(mdata, file="../tidyData/All Inquiries (De-ID) 2013- Tidy.RData")#
+#
+# Option 2 - Load saved tidy data#
+load("../tidyData/All Inquiries (De-ID) 2014- Tidy.RData")#
+# -	Add external data from ACS DP02#
+# o	HC03_VC04 - Percent; HOUSEHOLDS BY TYPE - Total households - Family households (families)#
+# o	HC03_VC06 - Percent; HOUSEHOLDS BY TYPE - Total households - Family households (families) - Married-couple family#
+# o	HC03_VC10 - Percent; HOUSEHOLDS BY TYPE - Total households - Family households (families) - Female householder, no husband present, family#
+# o	HC01_VC21 - Estimate; HOUSEHOLDS BY TYPE - Average household size#
+# o	HC03_VC81 - Percent; SCHOOL ENROLLMENT - Population 3 years and over enrolled in school - College or graduate school#
+# o	HC03_VC91 - Percent; EDUCATIONAL ATTAINMENT - Population 25 years and over - Bachelor's degree#
+# o	HC03_VC92 - Percent; EDUCATIONAL ATTAINMENT - Population 25 years and over - Graduate or professional degree#
+# o	Create variable (VC92- VC91)#
+# o	HC03_VC96 - Percent; EDUCATIONAL ATTAINMENT - Percent bachelor's degree or higher#
+# o	HC03_VC121 - Percent; RESIDENCE 1 YEAR AGO - Population 1 year and over - Different house in the U.S.#
+# o	HC03_VC125 - Percent; RESIDENCE 1 YEAR AGO - Population 1 year and over - Different house in the U.S. - Different county - Different state#
+# -	Add external data from ACS DP03#
+# o	HC01_VC04 - Estimate; EMPLOYMENT STATUS - Population 16 years and over - In labor force#
+# o	HC03_VC04 - Percent; EMPLOYMENT STATUS - Population 16 years and over - In labor force#
+# o	HC03_VC07 - Percent; EMPLOYMENT STATUS - Population 16 years and over - In labor force - Civilian labor force – Unemployed#
+# o	HC01_VC15 - Estimate; EMPLOYMENT STATUS - Females 16 years and over - In labor force#
+# o	HC03_VC15 - Percent; EMPLOYMENT STATUS - Females 16 years and over - In labor force#
+# o	HC01_VC59 - Estimate; INDUSTRY - Civilian employed population 16 years and over - Educational services, and health care and social assistance#
+# o	HC03_VC59 - Percent; INDUSTRY - Civilian employed population 16 years and over - Educational services, and health care and social assistance#
+# o	HC01_VC85 - Estimate; INCOME AND BENEFITS (IN 2014 INFLATION-ADJUSTED DOLLARS) - Total households - Median household income (dollars)#
+# o	HC01_VC114 - Estimate; INCOME AND BENEFITS (IN 2014 INFLATION-ADJUSTED DOLLARS) - Families - Median family income (dollars)#
+# o	HC01_VC118 - Estimate; INCOME AND BENEFITS (IN 2014 INFLATION-ADJUSTED DOLLARS) - Per capita income (dollars)#
+# o	HC03_VC161 - Percent; PERCENTAGE OF FAMILIES AND PEOPLE WHOSE INCOME IN THE PAST 12 MONTHS IS BELOW THE POVERTY LEVEL - All families#
+#### Build ACS Zip Code dataset#
+ACS_demo <- read.csv("../external_data/ACS_14_5YR_DP02_selected.csv")#
+ACS_demo <- select(ACS_demo, - GEO.id, - GEO.display.label)#
+names(ACS_demo)[names(ACS_demo)=='HC03_VC04']<-'DP02_HC03_VC04'#
+ACS_econ <- read.csv("../external_data/ACS_14_5YR_DP03_selected.csv", stringsAsFactors=FALSE)#
+ACS_econ <- select(ACS_econ, - GEO.id, - GEO.display.label)#
+ACS_econ$HC01_VC85 <- as.numeric(ACS_econ$HC01_VC85)#
+ACS_econ$HC01_VC114 <- as.numeric(ACS_econ$HC01_VC114)#
+ACS <- left_join(ACS_demo, ACS_econ, by = "GEO.id2")#
+ACS_scaled<- ACS#
+ACS_scaled[,-c(1)] <- scale(ACS_scaled[,-c(1)])#
+ACS_scaled$zip_code <- clean.zipcodes(ACS_scaled$GEO.id2)#
+#### Load US Economic condition data#
+US_econ <- read.csv("../external_data/US Economic Condition by Month.csv")#
+US_econ$Year <- as.factor(US_econ$Year)#
+#
+# load base lifecycle view (LCV) data and select only zip codes#
+load("../tidyData/All Inquiries (De-ID) 2014- Tidy.RData")#
+LCV <- mdata#
+LCV$zip_code <- LCV$student_postal_code#
+LCV$zip_code<- clean.zipcodes(LCV$zip_code) #
+LCV$zip_code[is.na(LCV$student_postal_code)] <- LCV$inquiry_postal_code[is.na(LCV$student_postal_code)] #
+LCV$zip_code<- clean.zipcodes(LCV$zip_code) #
+LCV$FID.year <- as.factor(LCV$FID.year)#
+LCV$inquiry_age <- Sys.Date() - LCV$date_first_inquiry#
+LCV$inquiry_age_log <- log(as.numeric(LCV$inquiry_age))#
+#
+# join datasets#
+LCV <- left_join(LCV, ACS_scaled)#
+LCV <- left_join(LCV, US_econ, by = c("FID.month" = "Month", "FID.year" = "Year"))#
+#
+# show NAs#
+sapply(LCV, function(x) sum(is.na(x)))#
+################
+##
+# PREPARE TIDY DATA FOR MODELING#
+##
+################
+#
+# filter out recent inquiries to give time for enrollment#
+#
+LCV <- LCV[LCV$date_first_inquiry<"2016-05-01",]#
+# set Outcome Variable#
+LCV$outcome_var <- LCV$x_is_net_enroll#
+LCV$outcome_var <- factor(LCV$outcome_var)#
+#
+# Create class variables#
+LCV$Class[LCV$outcome_var == 0 ] = "Not"#
+LCV$Class[LCV$outcome_var == 1] = "Enrolled"#
+#
+# Build training, validation and testsets#
+inTrain <- createDataPartition(y = LCV$outcome_var, p = .75, list = FALSE)#
+training <- LCV[inTrain,]#
+testing <- LCV[-inTrain,]#
+#
+# # filter out unused variables#
+# LCVdata <- select(LCV, inquiry_postal_code, x_is_net_enroll,inquiry_degree_group, inquiry_channel, FID.month, student_postal_code, FID.year)#
+# # remove unneeded variables#
+# LCVdata$x_is_net_enroll <- NULL#
+# LCVdata$zip_code <- NULL#
+# LCVdata$inquiry_postal_code <- NULL#
+# LCVdata$student_postal_code <- NULL#
+# LCVdata$GEO.id2 <- NULL#
+# # Create factors#
+# mdata$outcome_var = factor(mdata$outcome_var)#
+# mdata$inquiry_channel = factor(mdata$inquiry_channel)#
+################
+##
+# BUILD MODELS#
+##
+################
+#
+attach(training)#
+#
+### Model 1 - Inquiry Degree Group and Channel#
+m1.logit.fit = glm(outcome_var ~ inquiry_degree_group + inquiry_channel, family= binomial(logit), data = training)#
+m1.logit.modelAssess <- modelAssess(m1.logit.fit, testing)#
+#
+### Model 2 - Inquiry Degree Group, Channel and seasonality#
+m2.logit.fit = glm(outcome_var ~ inquiry_degree_group + inquiry_channel + FID.month, family= binomial(logit), data = training)#
+m2.logit.modelAssess <- modelAssess(m2.logit.fit, testing)#
+#
+### Model 3 - Inquiry Degree Group, Channel, seasonality and macroeconomics#
+m3.logit.fit = glm(outcome_var ~ inquiry_degree_group + inquiry_channel + FID.month + UnempRate + JobOpenings_EdHealth, family= binomial(logit), data = training)#
+m3.logit.modelAssess <- modelAssess(m3.logit.fit, testing)#
+#
+### Model 4 - Inquiry Degree Group, Channel, seasonality, macroeconomics and zipcode SES#
+m4.logit.fit = glm(outcome_var ~ inquiry_degree_group + inquiry_channel + FID.month + UnempRate + JobOpenings_EdHealth + HC03_VC161 + HC01_VC85, family = binomial(logit), data = training)#
+m4.logit.modelAssess <- modelAssess(m4.logit.fit, testing)#
+# ### Model 4 Caret - GLM - Inquiry Degree Group, Channel and FID Month with 1 pass 10 fold cross validation#
+# ctrl <- trainControl(method = "repeatedcv", repeats = 1, number = 3, classProbs = TRUE, summaryFunction = twoClassSummary)#
+# m4c.fit <- train(make.names(outcome_var) ~ inquiry_degree_group + inquiry_channel + FID.month + UnempRate + JobOpenings_EdHealth + HC03_VC161 + HC01_VC85, data= training, method = "glm", trControl = ctrl, metric = "Sens")#
+# m4c.PredClass <- predict(m4c.fit, select(testing, inquiry_degree_group, inquiry_channel, FID.monthUnempRate, JobOpenings_EdHealth, HC03_VC161, HC01_VC85))#
+# confusionMatrix(m4c.PredClass, testing$Class)#
+# ### Model 4 - adaBoost - Inquiry Degree Group, Channel and FID Month with 1 pass 10 fold cross validation#
+# ctrl <- trainControl(method = "repeatedcv", repeats = 1, classProbs = TRUE, summaryFunction = twoClassSummary)#
+# m4.fit <- train(Class ~ inquiry_degree_group + inquiry_channel + FID.month, data= training, method = "adaboost", trControl = ctrl, metric = "ROC")#
+# m4.PredClass <- predict(m4.fit, select(testing, -outcome_var))#
+# confusionMatrix(m4.PredClass, testing$Class)#
+#
+################
+##
+# PLOT MODEL PERFORMANCE#
+##
+################
+par(mfrow=c(2,2))#
+#
+# Plot Persistence/Recall Curve#
+plot(m1.logit.modelAssess$precrec, col=1, lwd=2, main="Precision/Recall Curve", xlim=c(0,1), ylim=c(0,1))#
+plot(m2.logit.modelAssess$precrec, col=2, lwd=2, add=T)#
+plot(m3.logit.modelAssess$precrec, col=3, lwd=2, add=T)#
+plot(m4.logit.modelAssess$precrec, col=4, lwd=2, add=T)#
+legend("bottomright",col=c(1:7),lwd=2,legend=c("M1","M2","M3","M4"),bty='n')#
+#
+# Plot F measure vs. Cutoff Curve#
+plot(m1.logit.modelAssess$f, col=1, lwd=2, main="F Measure vs. Cutoff Value", xlim=c(0,1), ylim=c(0,1))#
+plot(m2.logit.modelAssess$f, col=2, lwd=2, add=T)#
+plot(m3.logit.modelAssess$f, col=3, lwd=2, add=T)#
+plot(m4.logit.modelAssess$f, col=4, lwd=2, add=T)#
+legend("bottomright",col=c(1:7),lwd=2,legend=c("M1","M2", "M3", "M4"),bty='n')#
+#
+# Plot ROC Curve#
+plot(m1.logit.modelAssess$roc, col=1, lwd=2,main="ROC Curve")#
+plot(m2.logit.modelAssess$roc, col=2, lwd=2, add=T)#
+plot(m3.logit.modelAssess$roc, col=3, lwd=2, add=T)#
+plot(m4.logit.modelAssess$roc, col=4, lwd=2, add=T)#
+abline(a=0,b=1,lwd=2,lty=2,col="gray")#
+legend("bottomright",col=c(1:8),lwd=2,legend=c("M1","M2","M3", "M4"),bty='n')#
+######
+# CARET#
+#####
+#
+#### Build Dataset#
+#
+# Pick the outcome variable and predictor variables#
+#
+#### Preprocessing#
+#
+# Create Dummy Variables#
+#
+# can use the model.matrix base R function here to make a numeric set of factors#
+# model.matrix(survived ~ ., data = etitanic)#
+#
+# can also use dummyVars function#
+# dummyVars(survived ~ ., data = etitanic) # note this is full rank and does not have an intercept#
+# Remove Near Zero Variance Variables#
+#
+# can use nearZeroVar#
+#
+# nzv <- nearZeroVar(mdrrDescr)#
+# filteredDescr <- mdrrDescr[, -nzv]#
+# dim(filteredDescr)#
+#
+#### Sampling#
+#
+# set.seed(998)#
+# inTraining <- createDataPartition(Sonar$Class, p = .75, list = FALSE)#
+# training <- Sonar[ inTraining,]#
+# testing  <- Sonar[-inTraining,]#
+#### Training#
+#
+# ctrl <- trainControl(method = "repeatedcv", repeats = 3, classProbs = TRUE, summaryFunction = twoClassSummary)#
+# mx.logit.fit <- train(Class ~ inquiry_degree_group + inquiry_channel + FID.month, data= training, method = "glm", trControl = ctrl, metric = "ROC", preProc = c("center", "scale"))#
+#
+#### Compare Models#
+# resamps <- resamples(list(GBM = gbmFit3,#
+#                           SVM = svmFit,#
+#                           RDA = rdaFit))#
+# resamps#
+# summary(resamps)#
+# trellis.par.set(theme1)#
+# bwplot(resamps, layout = c(3, 1))#
+# trellis.par.set(caretTheme())#
+# dotplot(resamps, metric = "ROC")#
+# #
+# # T-test differences in performance#
+# difValues <- diff(resamps)#
+# difValues#
+# summary(difValues)#
+# trellis.par.set(theme1)#
+# bwplot(difValues, layout = c(3, 1))
+# Inquiry to Net Enroll Model Development#
+##
+# Sean Fahey#
+# 2016-06-16#
+##
+# This script develops and compares models for predicting the likelihood that an inquiry will net enroll including both internal inquiry lifecycle view data as well#
+# as external zip code data#
+##
+#
+#################
+##
+# CONFIGURE ENVIRONMENT#
+##
+##################
+# set working directory#
+getwd()#
+# setwd("/Users/sean.fahey/Google Drive/Analytics and Data/Modeling/Inquiry to Enroll/code/")#
+# load needed packages#
+library(dplyr)#
+library(caret)#
+library(zipcode)#
+library (ROCR)#
+source("modelAssess.R")
+q()
+library(MASS)
+data(cats)
+str(cats)
+plot (bwt ~ hwt)
+plot (cats$bwt ~ cats$hwt)
+plot(cats$Bwt, cats$Hwt)
+m <- glm(Bwt ~ Hwt, data = cats)
+summary(m)
+bwt2 <- predict(m,cats$Hwt)
+bwt2 <- predict(m,data = cats$Hwt)
+with(cats, plot( Bwt, Bwt2, Hgt))
+with(cats, plot( Bwt, Hgt, Bwt2, Hgt))
+plot(cats$Bwt, cats$Hwt, Bwt2, cats$Hwt)
+plot(cats$Bwt, cats$Hwt)
+abline(m)
+q()
+a<- c(1,2,NA,3)
+b<- c(2,3,4,NA)
+plot(a,b)
+b<-c(b,3)
+plot(a,b)
+nrow(a)
+nrows(a)
+rows(a)
+str(a)
+len(a)
+size(a)
+length(a0)
+length(a)
+help(ave)
+attach(warpbreaks)#
+ave(breaks, wool)#
+ave(breaks, tension)#
+ave(breaks, tension, FUN = function(x) mean(x, trim = 0.1))#
+plot(breaks, main =#
+     "ave( Warpbreaks )  for   wool  x  tension  combinations")#
+lines(ave(breaks, wool, tension              ), type = "s", col = "blue")#
+lines(ave(breaks, wool, tension, FUN = median), type = "s", col = "green")#
+legend(40, 70, c("mean", "median"), lty = 1,#
+      col = c("blue","green"), bg = "gray90")#
+detach()
+names(warpbreaks)
+head(warpbreaks)
+str(warpbreaks)
+boxplot(breaks, wool)
+boxplot(warpbreaks$breaks, warpbreaks$wool)
+table(wool)
+table(warpbreakswool)
+table(warpbreaks$wool)
+q()
+help order
+order??
+)
+order
+? order
+q()
+library(Rmonkey)
+smlogin()
+options(sm_secret = '247980397240465379297676830494544653711')
+options(sm_client_id = 'xNrzuB4PTCaaQM326voPgA')
+smlogin()
+q()
+# RMonkey library demo#
+##
+# Sean Fahey#
+# 2016-12-28#
+##
+# This program shows how the RMonkey library can be used to access SurveyMonkey data#
+# via API V3.#
+##
+#
+# Load the latest library from github#
+if(!require("devtools")) {#
+  install.packages("devtools")#
+  library("devtools")#
+}#
+install_github("seanofahey/Rmonkey")#
+library("Rmonkey")
+# get a long lasting oauth token#
+smlogin()
+options(sm_secret = '247980397240465379297676830494544653711')
+options(sm_client_id = 'xNrzuB4PTCaaQM326voPgA')
+smlogin()
+userdetails()
+userdetails
+userdetails <- function(#
+    oauth_token = getOption('sm_oauth_token'),#
+    ...#
+){#
+    u <- 'https://api.surveymonkey.net/v3/users/me'#
+    if(!is.null(oauth_token))#
+        token <- paste('bearer', oauth_token)#
+    else#
+        stop("Must specify 'oauth_token'.  Try smlogin() first to get a token.")#
+    out <- POST(u, config = add_headers(Authorization=token))#
+    stop_for_status(out)#
+    content <- parsed_content(out)#
+    # if(content$status != 0)#
+    #     warning("An error occurred: ",content$errmsg)#
+    structure(content$data$user_details, class='sm_userdetails')#
+}
+userdetails
+userdetails()
+library(httr)
+library(curl)
+userdetails()
+u <- userdetails()
+str(u)
+u
+userdetails <- function(#
+    oauth_token = getOption('sm_oauth_token'),#
+    ...#
+){#
+    u <- 'https://api.surveymonkey.net/v3/users/me'#
+    if(!is.null(oauth_token))#
+        token <- paste('bearer', oauth_token)#
+    else#
+        stop("Must specify 'oauth_token'.  Try smlogin() first to get a token.")#
+    out <- GET(u, config = add_headers(Authorization=token))#
+    stop_for_status(out)#
+    content <- parsed_content(out)#
+    # if(content$status != 0)#
+    #     warning("An error occurred: ",content$errmsg)#
+    structure(content$data$user_details, class="sm_userdetails")#
+}
+userdetails()
+q()
+# RMonkey library demo#
+##
+# Sean Fahey#
+# 2016-12-28#
+##
+# This program shows how the RMonkey library can be used to access SurveyMonkey data#
+# via API V3.#
+##
+#
+# load needed libraries#
+library(curl)#
+library(httr)#
+#
+# Load the latest Rmonkey library from github#
+if(!require("devtools")) {#
+  install.packages("devtools")#
+  library("devtools")#
+}#
+install_github("seanofahey/Rmonkey")#
+library("Rmonkey")
+options(sm_secret = '247980397240465379297676830494544653711')
+options(sm_client_id = 'xNrzuB4PTCaaQM326voPgA')
+smlogin()
+userdetails
+userdetails()
+u1 <- userdetails()
+class(u1)
+u1
+str(u1)
+names(u1)
+h <- add_headers(Authorization=token,#
+                     'Content-Type'='application/json')
+oauth_token = getOption('sm_oauth_token')
+oauth_token
+u <- 'https://api.surveymonkey.net/v3/users/me'
+token <- paste('bearer', oauth_token)
+token
+out <- GET(u, config = add_headers(Authorization=token,#
+                                       'Content-Type'='application/json'))
+out
+str(out)
+content <- parsed_content(out)
+str(content)
+userdetails <- function(#
+    oauth_token = getOption('sm_oauth_token'),#
+    ...#
+){#
+    u <- 'https://api.surveymonkey.net/v3/users/me'#
+    if(!is.null(oauth_token))#
+        token <- paste('bearer', oauth_token)#
+    else#
+        stop("Must specify 'oauth_token'.  Try smlogin() first to get a token.")#
+    out <- GET(u, config = add_headers(Authorization=token,#
+                                       'Content-Type'='application/json'))#
+    stop_for_status(out)#
+    content <- parsed_content(out)#
+    # if(content$status != 0)#
+    #     warning("An error occurred: ",content$errmsg)#
+    structure(content$data$user_details, class="sm_userdetails")#
+}
+userdetails()
+u1 <- userdetails()
+str(u1)
+content
+structure(content, class="sm_userdetails")
+str(content)
+u1 <- userdetails()
+str(u1)
+u1
+rm(list = ls())
+smlogin()
+userdetails <- function(#
+    oauth_token = getOption('sm_oauth_token'),#
+    ...#
+){#
+    u <- 'https://api.surveymonkey.net/v3/users/me'#
+    if(!is.null(oauth_token))#
+        token <- paste('bearer', oauth_token)#
+    else#
+        stop("Must specify 'oauth_token'.  Try smlogin() first to get a token.")#
+    out <- GET(u, config = add_headers(Authorization=token,#
+                                       'Content-Type'='application/json'))#
+    stop_for_status(out)#
+    content <- parsed_content(out)#
+    # if(content$status != 0)#
+    #     warning("An error occurred: ",content$errmsg)#
+    structure(content, class="sm_userdetails")#
+}
+u1 <- userdetails()
+str(u1)
+sl <- surveylist()
+sl
+# Lookup userdetails to test API#
+users <- userdetails()#
+#
+# Show a list of surveys#
+sl <- surveylist()
+sl
+surveydetails(sl[[1]])
+sd1.q <- surveydetails(sl[[1]], question_details = TRUE)
+str(sd1.q)
+q()
+# RMonkey library demo#
+##
+# Sean Fahey#
+# 2016-12-28#
+##
+# This program shows how the RMonkey library can be used to access SurveyMonkey data#
+# via API V3.#
+##
+#
+# load needed libraries#
+library(curl)#
+library(httr)#
+#
+# Load the latest Rmonkey library from github#
+if(!require("devtools")) {#
+  install.packages("devtools")#
+  library("devtools")#
+}#
+install_github("seanofahey/Rmonkey")#
+library("Rmonkey")#
+#
+# Create a SurveyMonkey App to enable the API#
+# 1) go to https://developer.surveymonkey.com/apps/ to create an app#
+# 2) set the OAuth redirect URL as http://localhost:1410#
+# 3) set the scope permissions (I used all the view ones but no create ones)#
+# 4) note the following values from the App screen: clientID, Secret#
+# Enter your app API info into R#
+options(sm_client_id = 'YourMasheryDeveloperUsername')#
+options(sm_secret = 'YourAPISecret')#
+#
+# Get a long lasting oauth token.  This function completes the OAuth handshake#
+# and saves a long lasting token on the computer.  It needs to be done only once#
+smlogin()#
+#
+# Lookup userdetails to test API#
+users <- userdetails()#
+#
+# Show a list of surveys#
+sl <- surveylist()#
+#
+# Display the list of surveys#
+# (This shows each survey using the print.sm_survey function which overrides the standard#
+# print function)#
+sl#
+#
+# Get and display more details for the first survey on the list#
+# (This uses the same print.sm_survey function but has more data to display)#
+sd1 <- surveydetails(sl[[1]])#
+#
+# Get and display survey deatils including the details on the survey questions#
+sd1.q <- surveydetails(sl[[1]], question_details = TRUE)
+options(sm_client_id = 'xNrzuB4PTCaaQM326voPgA')
+options(sm_secret = '247980397240465379297676830494544653711')
+smlogin()
+getOption(sm_oauth_token)
+oauth_token = getOption('sm_oauth_token'),
+oauth_token = getOption('sm_oauth_token')
+oauth_token
+# Lookup userdetails to test API#
+users <- userdetails()#
+#
+# Show a list of surveys#
+sl <- surveylist()#
+#
+# Display the list of surveys#
+# (This shows each survey using the print.sm_survey function which overrides the standard#
+# print function)#
+sl#
+#
+# Get and display more details for the first survey on the list#
+# (This uses the same print.sm_survey function but has more data to display)#
+sd1 <- surveydetails(sl[[1]])#
+#
+# Get and display survey deatils including the details on the survey questions#
+sd1.q <- surveydetails(sl[[1]], question_details = TRUE)
+users
+# Get and display more details for the first survey on the list#
+# (This uses the same print.sm_survey function but has more data to display)#
+sd1 <- surveydetails(sl[[1]])#
+sd1#
+#
+# Get and display survey deatils including the details on the survey questions#
+sd1.q <- surveydetails(sl[[1]], question_details = TRUE)#
+sd1.q
+str(sd1.q)
+getresponses <- function(#
+    survey,#
+    collector = NULL,#
+    bulk = FALSE,#
+    oauth_token = getOption('sm_oauth_token'),#
+    ...#
+){#
+    if (inherits(survey, 'sm_survey')) {#
+        survey$id <- survey$id#
+    } else {#
+        stop("'survey' is not of class sm_survey")#
+    }#
+    if (!is.null(collector)) {#
+        if (bulk) {#
+          u <- paste('https://api.surveymonkey.net/v3/collectors/',collector$id,'/responses/bulk?', sep='')   #
+        } else {#
+          u <- paste('https://api.surveymonkey.net/v3/collectors/',collector$id,'/responses?', sep='')  #
+        }#
+    } else {#
+        if (bulk) {#
+          u <- paste('https://api.surveymonkey.net/v3/surveys/',survey$id,'/responses/bulk?', sep='')  #
+        } else {#
+          u <- paste('https://api.surveymonkey.net/v3/surveys/',survey$id,'/responses?', sep='')  #
+        }#
+    }#
+    if (!is.null(oauth_token)) {#
+        token <- paste('bearer', oauth_token)#
+    } else {#
+        stop("Must specify 'oauth_token'")#
+    }#
+    h <- add_headers(Authorization=token,#
+                     'Content-Type'='application/json')#
+    out <- GET(u, config = h, ...)#
+    stop_for_status(out)#
+    content <- parsed_content(out)#
+    # if (content$status != 0) {#
+    #     warning("An error occurred: ",content$errmsg)#
+    #     return(content)#
+    # } else {#
+    if (!is.null(content$data)) {#
+        lapply(content$data, `class<-`, "sm_response")#
+        # content$data <- lapply(content$data, `attr<-`, 'survey_id', survey)#
+    }#
+    return(structure(content, class = 'sm_response_list'))#
+}
+getresponses(sl[[1]])
+sl1.r <- getresponses(sl[[1]])
+sl1.r[[1]]
+sl1.r[[2]]
+sl1.r$data[[1]]
+class(sl1.r$data[[1]])
+class(sl1.r)
+str(sl1.r)
+lapply(sl1.r$data, `class<-`, "sm_response")
+getresponses
+getresponses <- function(#
+    survey,#
+    collector = NULL,#
+    bulk = FALSE,#
+    oauth_token = getOption('sm_oauth_token'),#
+    ...#
+){#
+    if (inherits(survey, 'sm_survey')) {#
+        survey$id <- survey$id#
+    } else {#
+        stop("'survey' is not of class sm_survey")#
+    }#
+    if (!is.null(collector)) {#
+        if (bulk) {#
+          u <- paste('https://api.surveymonkey.net/v3/collectors/',collector$id,'/responses/bulk?', sep='')   #
+        } else {#
+          u <- paste('https://api.surveymonkey.net/v3/collectors/',collector$id,'/responses?', sep='')  #
+        }#
+    } else {#
+        if (bulk) {#
+          u <- paste('https://api.surveymonkey.net/v3/surveys/',survey$id,'/responses/bulk?', sep='')  #
+        } else {#
+          u <- paste('https://api.surveymonkey.net/v3/surveys/',survey$id,'/responses?', sep='')  #
+        }#
+    }#
+    if (!is.null(oauth_token)) {#
+        token <- paste('bearer', oauth_token)#
+    } else {#
+        stop("Must specify 'oauth_token'")#
+    }#
+    h <- add_headers(Authorization=token,#
+                     'Content-Type'='application/json')#
+    out <- GET(u, config = h, ...)#
+    stop_for_status(out)#
+    content <- parsed_content(out)#
+    # if (content$status != 0) {#
+    #     warning("An error occurred: ",content$errmsg)#
+    #     return(content)#
+    # } else {#
+    if (!is.null(content$data)) {#
+        lapply(content$data, `class<-`, "sm_response")#
+    }#
+    structure(content, class = 'sm_response_list')#
+}
+sl1.r <- getresponses(sl[[1]])
+class(sl1.r)
+sl1.r
+str(sl1.r)
+lapply(sl1.r$data, `class<-`, "sm_response")
+is.null(sl1.r$data)
+!is.null(sl1.r$data)
+getresponses <- function(#
+    survey,#
+    collector = NULL,#
+    bulk = FALSE,#
+    oauth_token = getOption('sm_oauth_token'),#
+    ...#
+){#
+    if (inherits(survey, 'sm_survey')) {#
+        survey$id <- survey$id#
+    } else {#
+        stop("'survey' is not of class sm_survey")#
+    }#
+    if (!is.null(collector)) {#
+        if (bulk) {#
+          u <- paste('https://api.surveymonkey.net/v3/collectors/',collector$id,'/responses/bulk?', sep='')   #
+        } else {#
+          u <- paste('https://api.surveymonkey.net/v3/collectors/',collector$id,'/responses?', sep='')  #
+        }#
+    } else {#
+        if (bulk) {#
+          u <- paste('https://api.surveymonkey.net/v3/surveys/',survey$id,'/responses/bulk?', sep='')  #
+        } else {#
+          u <- paste('https://api.surveymonkey.net/v3/surveys/',survey$id,'/responses?', sep='')  #
+        }#
+    }#
+    if (!is.null(oauth_token)) {#
+        token <- paste('bearer', oauth_token)#
+    } else {#
+        stop("Must specify 'oauth_token'")#
+    }#
+    h <- add_headers(Authorization=token,#
+                     'Content-Type'='application/json')#
+    out <- GET(u, config = h, ...)#
+    stop_for_status(out)#
+    content <- parsed_content(out)#
+    if (!is.null(content$data)) {#
+        lapply(content$data, `class<-`, "sm_response")#
+    }#
+    structure(content, class = 'sm_response_list')#
+}
+getresponses
+getresponses(sl[[2]])
+sl2.r <- getresponses(sl[[2]])
+class(sl2.r)
+class(sl2.r$data)
+class(sl2.r$data[[1]])
+sl2.r$data
+sl2.r$data[[1]]
+lapply(sl2.r$data, `class<-`, "sm_response")
+# Show the responses to a survey#
+sl1.r <- getresponses(sl[[1]])
+sl1.r
+surveyquestions(sl[[1]])
+sl1.q <- surveyquestions(sl[[1]])
+class(sl1.q)
+str(sl1.q)
+surveypreview(sl[[1]])
+sd1
+sl1.q <- surveyquestions()
+sl1.q <- surveyquestions(sl[[1]])
+sl1.q
+sl1.rd <- getresponses(sl[[1]], bulk = TRUE)
+sl1.rd
+sl1.rd <- getresponses(sl[[1]], bulk = TRUE)
+q()
+# RMonkey library demo#
+##
+# Sean Fahey#
+# 2016-12-28#
+##
+# This program shows how the RMonkey library can be used to access SurveyMonkey data#
+# via API V3.#
+##
+#
+# load needed libraries#
+library(curl)#
+library(httr)#
+#
+# Load the latest Rmonkey library from github#
+if(!require("devtools")) {#
+  install.packages("devtools")#
+  library("devtools")
+}
+install_github("seanofahey/Rmonkey")#
+library("Rmonkey")
+# RMonkey library demo#
+##
+# Sean Fahey#
+# 2016-12-28#
+##
+# This program shows how the RMonkey library can be used to access SurveyMonkey data#
+# via API V3.#
+##
+#
+# load needed libraries#
+library(curl)#
+library(httr)#
+#
+# Load the latest Rmonkey library from github#
+if(!require("devtools")) {#
+  install.packages("devtools")#
+  library("devtools")}
+install_github("seanofahey/Rmonkey")#
+library("Rmonkey")
+smlogin
+q()
+getwd()
+setwd(../)
+setwd("../")
+dir()
+setwd("../")
+dir()
+setwd("../")
+dir()
+setwd("Users/")
+dir()
+setwd("sean.fahey/")
+dir()
+setwd("Rmonkey/")
+dir()
+# RMonkey library demo#
+##
+# Sean Fahey#
+# 2016-12-28#
+##
+# This program shows how the RMonkey library can be used to access SurveyMonkey data#
+# via API V3.#
+##
+#
+# load needed libraries#
+library(curl)#
+library(httr)#
+library(jsonlite)#
+library(dplyr)#
+#
+# Load the latest Rmonkey library from github#
+if(!require("devtools")) {#
+  install.packages("devtools")#
+  library("devtools")#
+}#
+install_github("seanofahey/Rmonkey")#
+library("Rmonkey")
+ls(pos = package:"Rmonkey")
+ls(pos = "package:Rmonkey")
+q()

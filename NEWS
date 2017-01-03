@@ -1,3 +1,14 @@
+# CHANGES TO Rmonkey 0.5 #
+
+## SIGNIFICANT USER-VISIBLE CHANGES ##
+* Rebuilt several functions to work with SurkeyMonkey API V3 (smlogin, userdetails, surveylist, surveydetails)
+* 
+
+## BUG FIXES ##
+
+## DOCUMENTATION ##
+* added Roxygen comments to new functions
+
 # CHANGES TO Rmonkey 0.4 #
 
 ## SIGNIFICANT USER-VISIBLE CHANGES ##
