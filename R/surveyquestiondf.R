@@ -1,6 +1,11 @@
-# @ surveyquestiondf.r
-#
-# This program creates a data frame from the survey questions and answers
+#' surveyquestiondf
+#' 
+#' Creates a data frame from the survey questions and answers
+#' 
+#' @param survey A sm_survey object, as retrieved by \code{surveylist()}.
+#' @return A data frame with one row per question/subquestion/answer choice
+#' @export surveyquestiondf
+#' 
 surveyquestiondf <- function(survey) {
   df <- data.frame()
   sd <- surveydetails(survey, question_details = TRUE)
