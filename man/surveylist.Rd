@@ -10,7 +10,7 @@ surveylist(page = NULL, per_page = NULL, sort_by = NULL,
   ...)
 }
 \arguments{
-\item{page}{Integer numebr to select which page of resources to return. By default is 1.}
+\item{page}{Integer number to select which page of resources to return. By default is 1.}
 
 \item{per_page}{Integer number to set the number of surveys to return per page.  By default, is 50 surveys per page.}
 

@@ -5,7 +5,7 @@
 #' This function calls the SurveyMonkey API using the current oauth token and returns
 #' a list of surveys filtered by the parameters entered.
 #'
-#' @param page Integer numebr to select which page of resources to return. By default is 1.
+#' @param page Integer number to select which page of resources to return. By default is 1.
 #' @param per_page Integer number to set the number of surveys to return per page.  By default, is 50 surveys per page.
 #' @param sort_by String used to sort returned survey list: ‘title’, 'date_modified’, or 'num_responses’. By default, date_modified.
 #' @param sort_order String used to set the sort order for returned surveys: 'ASC’ or 'DESC’. By default, DESC.
@@ -17,6 +17,7 @@
 #' @return A list of objects of class \code{sm_survey}.
 #' @references SurveyMonkey API V3 at \url{https://developer.surveymonkey.com/api/v3/#surveys}
 #' @export surveylist
+
 
 surveylist <- function(
     page = NULL,
@@ -53,11 +54,11 @@ surveylist <- function(
         b <- NULL
     else
         b <- b[!nulls]
-    h <- add_headers(Authorization=token,
+    h <- httr::add_headers(Authorization=token,
                      'Content-Type'='application/json')
-    out <- GET(u, config = h, ..., query = b)
-    stop_for_status(out)
-    content <- content(out, as = 'parsed')
-    sl <- content$data
+    out <- httr::GET(u, config = h, ..., query = b)
+    httr::stop_for_status(out)
+    parsed_content <- httr::content(out, as = 'parsed')
+    sl <- parsed_content$data
     lapply(sl, `class<-`, 'sm_survey')
 }
