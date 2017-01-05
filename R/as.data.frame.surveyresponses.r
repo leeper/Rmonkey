@@ -1,7 +1,11 @@
-# as.data.frame.surveyresponses
-#
-# This function extracts data from the survey responses data set and formats it as
-# a data frame for analysis
+#' as.data.frame.surveyresponses
+#' 
+#' Extracts data from the survey responses data set and formats it as a data frame for analysis
+#' 
+#' @param survey A sm_survey object, as retrieved by \code{surveylist()}.
+#' @return A data frame with survey responses
+#' @export as.data.frame.surveyresponses
+
 
 as.data.frame.surveyresponses <- function(survey) {
   df <- data.frame()
