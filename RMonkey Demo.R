@@ -8,11 +8,10 @@
 #
 
 # load needed libraries
-library(curl)
-library(httr)
-library(jsonlite)
+# library(curl)
+# library(httr)
+# library(jsonlite)
 library(dplyr)
-library(httpuv)
 
 # Load the latest Rmonkey library from github
 if(!require("devtools")) {
