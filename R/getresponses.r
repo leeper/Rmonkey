@@ -6,7 +6,7 @@
 #' @param collector A sm_collector object, as retrieved by \code{collectorlist}. By default = NULL
 #' @param bulk A logical variable to indicate if list response should include a list of full expanded responses, including answers to all questions. By default = FALSE
 #' @param page Integer number to select which page of resources to return. By default is 1.
-#' @param Integer number to set the number of surveys to return per page.  By default, is 50 surveys per page.
+#' @param per_page Integer number to set the number of surveys to return per page.  By default, is 50 surveys per page.
 #' @param start_created_at Date string used to select surveys created after this date. By default is NULL.
 #' @param end_created_at Date string used to select surveys modified before this date.  By default is NULL.
 #' @param start_modified_at Date string used to select surveys last modified after this date. By default is NULL.
