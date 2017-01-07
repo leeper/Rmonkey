@@ -67,7 +67,8 @@ getresponses <- function(
     survey,
     collector = NULL,
     bulk = FALSE,
-    page = NULL,
+    page = 1,
+    all_pages = FALSE,
     per_page = NULL,
     start_created_at = NULL,
     end_created_at = NULL,
@@ -113,6 +114,7 @@ getresponses <- function(
   if (inherits(end_modified_at, "POSIXct") | inherits(end_modified_at, "Date")) {
     end_modified_at <- format(end_modified_at, "%Y-%m-%d %H:%M:%S", tz = "UTC")
   }
+  
   # need to add error checking for status
   b <- list(page = page, 
             per_page = per_page,
@@ -130,6 +132,8 @@ getresponses <- function(
   }  
   h <- httr::add_headers(Authorization=token,
                      'Content-Type'='application/json')
+  
+  
     out <- httr::GET(u, config = h, ..., query = b)
     httr::stop_for_status(out)
     parsed_content <- httr::content(out, as = 'parsed')
@@ -137,7 +141,27 @@ getresponses <- function(
         lapply(parsed_content$data, `class<-`, "sm_response")
     }
     structure(parsed_content, class = 'sm_response_list')
-    return(parsed_content$data)
+
+    # build data frame from reponses
+    responses <- parsed_content$data
+    
+    # recursively get all responses if all_pages = TRUE
+    if (all_pages == TRUE & (!is.null(parsed_content$links[['next']]))) {
+      rnext <- getresponses (survey, 
+                             collector,
+                             bulk,
+                             page = page + 1,
+                             all_pages,
+                             per_page,
+                             start_created_at,
+                             end_created_at,
+                             start_modified_at,
+                             end_modified_at,
+                             sort_order,
+                             sort_by)
+      responses <- c(responses, rnext)
+    }
+    return (responses)
 }
 
 print.sm_response <- function(x, ...){

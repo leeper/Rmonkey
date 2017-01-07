@@ -99,5 +99,19 @@ s1.rd <- getresponses(sl[[1]], bulk = TRUE)
 s1.r_df <- as.data.frame.surveyresponses(sl[[1]])
 str(s1.r_df)
 
+### CREATE A CLEAN DATA FRAME (to move into a function)
+
 # Join response data with question data to decode responses 
 s1.r_decode <- left_join (s1.r_df, s1_df)
+
+# Combine the two question headers to make one
+s1.r_decode$question_text_full <- ifelse(!is.na(s1.r_decode$subquestion_text),
+    paste(s1.r_decode$question_text, " - ", s1.r_decode$subquestion_text),
+    paste(s1.r_decode$question_text)
+)
+
+# Select only the columns for the final dataframe
+s1.r_decode_sm <- select(s1.r_decode, response_id, survey_id, collector_id, recipient_id, question_text_full, answerchoice_text)
+
+# Spread from column to tablular form
+s1.r_table <- spread(s1.r_decode_sm, question_text_full, answerchoice_text)

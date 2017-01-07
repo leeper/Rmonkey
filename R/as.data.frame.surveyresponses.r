@@ -9,7 +9,8 @@
 
 as.data.frame.surveyresponses <- function(survey) {
   df <- data.frame()
-  sr <- getresponses(survey, bulk = TRUE)
+  sr <- getresponses(survey, bulk = TRUE, all_page = TRUE)
+  sq <- surveyquestiondf(survey)
   survey_id <- survey$id
   
   # Iterate through responses
@@ -55,7 +56,29 @@ as.data.frame.surveyresponses <- function(survey) {
       }
     }
   }
-  return(df)
+  
+  # join responses to question data
+  df <- dplyr::left_join (df, sq)
+  
+  # Combine the two question headers to make a single one
+  df$question_text_full <-
+    ifelse (
+      df$question_type == 'multiple_choice',
+      paste(df$question_text, "-", df$answerchoice_text),
+      ifelse(
+        !is.na(df$subquestion_text),
+        paste(df$question_text, "-", df$subquestion_text),
+        paste(df$question_text)
+      )
+    )
+  
+  # Select only the columns for the final dataframe
+  df <- select(df, response_id, survey_id, collector_id, recipient_id, question_text_full, answerchoice_text)
+  
+  # Spread from column to tablular form
+  df_table <- spread(df, question_text_full, answerchoice_text)
+  
+  return(df_table)
 }
   
   # Future work
