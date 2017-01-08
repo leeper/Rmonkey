@@ -27,6 +27,7 @@ as.data.frame.surveyresponses <- function(survey) {
       # use a repeat loop to account for cases where there are no answer rows
       repeat {
         j <- j + 1     # increment counter first for array indexing
+        answertext <- NA
         if (is.null(i$answers[[j]]$row_id)) {
           subquestion_id <- NA
         } else {
@@ -34,6 +35,9 @@ as.data.frame.surveyresponses <- function(survey) {
         }
         if (is.null(i$answers[[j]]$choice_id)) {
           answerchoice_id <- NA
+          if (is.null(i$answers[[j]]$other_id)) {
+            answertext <- i$answers[[j]]$text
+          }
         } else {
           answerchoice_id <- i$answers[[j]]$choice_id
         }
@@ -46,6 +50,7 @@ as.data.frame.surveyresponses <- function(survey) {
             question_id,
             subquestion_id,
             answerchoice_id,
+            answertext,
             stringsAsFactors = FALSE,
             check.rows = FALSE
           )
@@ -71,6 +76,12 @@ as.data.frame.surveyresponses <- function(survey) {
         paste(df$question_text)
       )
     )
+  
+  # Remove rows with NA as question_text (these are the 'other' responses that still need to be managed)
+  df <- df[!is.na(df$question_text_full),]
+  
+  # for text responses replace the answerchoice field with the text
+  df$answerchoice_text[!is.null(df$answertext)] <- df$answertext
   
   # Select only the columns for the final dataframe
   df <- select(df, response_id, survey_id, collector_id, recipient_id, question_text_full, answerchoice_text)
