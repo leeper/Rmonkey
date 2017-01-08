@@ -12,6 +12,7 @@
 # library(httr)
 # library(jsonlite)
 library(dplyr)
+library(tidyr)
 
 # Load the latest Rmonkey library from github
 if(!require("devtools")) {
@@ -51,7 +52,7 @@ sl
 str(sl[[1]])
 
 # Return a specific list of surveys
-sl <- surveylist(per_page = 100, sort_by = 'num_responses', sort_order = 'desc')
+sl <- surveylist(per_page = 100, include = 'response_count', sort_by = 'num_responses', sort_order = 'desc')
 sl
 
 # Return surveys that have been modified since a certain date
