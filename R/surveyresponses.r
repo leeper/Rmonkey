@@ -1,13 +1,13 @@
-#' as.data.frame.surveyresponses
+#' surveyresponses
 #' 
 #' Extracts data from the survey responses data set and formats it as a data frame for analysis
 #' 
 #' @param survey A sm_survey object, as retrieved by \code{surveylist()}.
 #' @return A data frame with survey responses
-#' @export as.data.frame.surveyresponses
+#' @export surveyresponses
 
 
-as.data.frame.surveyresponses <- function(survey) {
+surveyresponses <- function(survey) {
   df <- data.frame()
   sr <- getresponses(survey, bulk = TRUE, all_page = TRUE)
   sq <- surveyquestiondf(survey)
@@ -63,7 +63,7 @@ as.data.frame.surveyresponses <- function(survey) {
   }
   
   # join responses to question data
-  df <- dplyr::left_join (df, sq)
+  df <- dplyr::left_join (df, sq, by = c("survey_id", "question_id", "subquestion_id", "answerchoice_id"))
   
   # Combine the two question headers to make a single one
   df$question_text_full <-
