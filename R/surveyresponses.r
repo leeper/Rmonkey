@@ -34,8 +34,11 @@ surveyresponses <- function(survey) {
           subquestion_id <- i$answers[[j]]$row_id
         }
         if (is.null(i$answers[[j]]$choice_id)) {
-          answerchoice_id <- NA
           if (is.null(i$answers[[j]]$other_id)) {
+            answerchoice_id <- NA
+            answertext <- i$answers[[j]]$text
+          } else {
+            answerchoice_id <-i$answers[[j]]$other_id
             answertext <- i$answers[[j]]$text
           }
         } else {
@@ -81,7 +84,7 @@ surveyresponses <- function(survey) {
   df <- df[!is.na(df$question_text_full),]
   
   # for text responses replace the answerchoice field with the text
-  df$answerchoice_text[is.na(df$answerchoice_text)] <- df$answertext
+  df$answerchoice_text[!is.na(df$answertext)] <- df$answertext[!is.na(df$answertext)]
   
   # Select only the columns for the final dataframe
   df <- select(df, response_id, survey_id, collector_id, recipient_id, question_text_full, answerchoice_text)
