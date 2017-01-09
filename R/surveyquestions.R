@@ -62,6 +62,31 @@ surveyquestions <- function(survey) {
             stringsAsFactors = FALSE,
             check.rows = FALSE
           )
+        
+        # append a second new row for other options on select questions
+        if(!is.null(i$answers$other) & k == 1) {
+          answerchoice_id <- i$answers$other$id
+          answerchoice_text <- i$answers$other$text
+          answerchoice_weight <- NA
+          newrow2 <-
+            data.frame(
+              survey_id,
+              question_id,
+              subquestion_id,
+              answerchoice_id,
+              question_type,
+              question_subtype,
+              question_text,
+              subquestion_text,
+              answerchoice_text,
+              answerchoice_weight,
+              stringsAsFactors = FALSE,
+              check.rows = FALSE
+            )
+          newrow <- rbind(newrow, newrow2)
+        }
+        
+        # add new row(s) to dataframe
         df <- rbind(df, newrow)
         if (k >= length(i$answers$choices)) {
           break
