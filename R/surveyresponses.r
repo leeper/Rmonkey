@@ -10,7 +10,7 @@
 surveyresponses <- function(survey) {
   df <- data.frame()
   sr <- getresponses(survey, bulk = TRUE, all_page = TRUE)
-  sq <- surveyquestiondf(survey)
+  sq <- surveyquestions(survey)
   survey_id <- survey$id
   
   # Iterate through responses
@@ -81,7 +81,7 @@ surveyresponses <- function(survey) {
   df <- df[!is.na(df$question_text_full),]
   
   # for text responses replace the answerchoice field with the text
-  df$answerchoice_text[!is.null(df$answertext)] <- df$answertext
+  df$answerchoice_text[is.na(df$answerchoice_text)] <- df$answertext
   
   # Select only the columns for the final dataframe
   df <- select(df, response_id, survey_id, collector_id, recipient_id, question_text_full, answerchoice_text)
