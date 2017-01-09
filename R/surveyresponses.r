@@ -3,11 +3,13 @@
 #' Extracts data from the survey responses data set and formats it as a data frame for analysis
 #' 
 #' @param survey A sm_survey object, as retrieved by \code{surveylist()}.
+#' @param response_format A string indicating the desired data frame response format: 'Table' = one survey response per row and one column per question, or 'Column' = a key/value arrangement with each row holding data for a single question response
 #' @return A data frame with survey responses
 #' @export surveyresponses
 
 
-surveyresponses <- function(survey) {
+surveyresponses <- function(survey,
+                            response_format = table) {
   df <- data.frame()
   sr <- getresponses(survey, bulk = TRUE, all_page = TRUE)
   sq <- surveyquestions(survey)
@@ -80,8 +82,8 @@ surveyresponses <- function(survey) {
       )
     )
   
-  # Remove rows with NA as question_text (these are the 'other' responses that still need to be managed)
-  df <- df[!is.na(df$question_text_full),]
+  # # Remove rows with NA as question_text (these are the 'other' responses that still need to be managed)
+  # df <- df[!is.na(df$question_text_full),]
   
   # for text responses replace the answerchoice field with the text
   df$answerchoice_text[!is.na(df$answertext)] <- df$answertext[!is.na(df$answertext)]
@@ -92,7 +94,8 @@ surveyresponses <- function(survey) {
   # Spread from column to tablular form
   df_table <- spread(df, question_text_full, answerchoice_text)
   
-  return(df_table)
+  if (tolower(response_format) == 'column') {return(df)} else {return(df_table)}
+  
 }
   
   # Future work
