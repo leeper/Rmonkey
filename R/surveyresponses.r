@@ -9,9 +9,12 @@
 
 
 surveyresponses <- function(survey,
-                            response_format = 'table') {
+                            response_format) {
+  
+  if (missing(response_format)) {response_format = 'table'}
+  
   df <- data.frame()
-  sr <- getresponses(survey, bulk = TRUE, all_page = TRUE)
+  sr <- getresponses(survey, bulk = TRUE, all_page = TRUE, per_page = 100)
   sq <- surveyquestions(survey)
   survey_id <- survey$id
   
