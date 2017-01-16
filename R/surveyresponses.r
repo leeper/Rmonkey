@@ -93,11 +93,13 @@ surveyresponses <- function(survey,
   
   # Select only the columns for the final dataframe
   df <- select(df, response_id, survey_id, collector_id, recipient_id, question_text_full, answerchoice_text)
-  
-  # Spread from column to tablular form
-  df_table <- spread(df, question_text_full, answerchoice_text)
-  
-  if (tolower(response_format) == 'column') {return(df)} else {return(df_table)}
+
+  if (tolower(response_format) == 'column') {return(df)} else {
+    
+    # Spread from column to tablular form
+    df_table <- spread(df, question_text_full, answerchoice_text)
+    
+    return(df_table)}
   
 }
   
