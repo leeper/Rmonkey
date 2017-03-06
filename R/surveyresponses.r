@@ -96,8 +96,11 @@ surveyresponses <- function(survey,
 
   if (tolower(response_format) == 'column') {return(df)} else {
     
+    # remove any duplicate rows (need to change questiontext to quesiton ID to avoid this)
+    df <- df[!duplicated(df),]
+    
     # Spread from column to tablular form
-    df_table <- spread(df, question_text_full, answerchoice_text)
+    df_table <- tidyr::spread(df, question_text_full, answerchoice_text)
     
     return(df_table)}
   
