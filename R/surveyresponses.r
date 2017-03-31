@@ -92,7 +92,7 @@ surveyresponses <- function(survey,
   df$answerchoice_text[!is.na(df$answertext)] <- df$answertext[!is.na(df$answertext)]
   
   # Select only the columns for the final dataframe
-  df <- select(df, response_id, survey_id, collector_id, recipient_id, question_text_full, answerchoice_text)
+  df <- dplyr::select(df, response_id, survey_id, collector_id, recipient_id, question_text_full, answerchoice_text)
 
   if (tolower(response_format) == 'column') {return(df)} else {
     
