@@ -102,24 +102,17 @@ surveypreview(sl[[1]])
 
 ## Retrieve Survey Responses ##
 
-To get a list of responses for a survey use the `surveyresponses()` function.  In the function, pass a survey object retrieved using the survey list function.  This will return a data frame with one row per response and one column per question.  
+To get a list of responses for a survey use the `surveyresponses()` function.  In the function, pass a survey object retrieved using the survey list function.  This will return a data frame with one row per response and one column per question.  (NOTE: This can take a long time to run.)
 
 ```{r}
 s1.r <- surveyresponses(sl[[5]])
 head(s1.r)
 ```
 
-To get the results into a columnar format use the response_format = 'column' parameter.  (This can be useful if exporting the data to systems that ingest data in this format.)
+To get the survey results into a columnar format use the response_format = 'column' parameter.  (This can be useful if exporting the data to systems that ingest data in this format.)
 
 ```{r}
 s1.r <- surveyresponses(sl[[5]], response_format = 'column')
 head(s1.r)
 ```
 
-## Future Work ## 
-
-The following known issues are on the docket for future work:
-* enable retrieval by collector
-* enable passing of survey ID in addition to a survey object
-* update functions to allow creation of surveys
-* improve the code in the getresponses() function to remove loops and make it much faster
