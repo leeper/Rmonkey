@@ -1,0 +1,118 @@
+---
+title: "README"
+author: "Thomas"
+author: "Sean Fahey"
+date: "3/30/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Rmonkey** provides access to [Survey Monkey](https://www.surveymonkey.com/), for the complete integration of survey data collection and analysis into a single, easily reproducible workflow.
+
+## Installation ##
+
+This version of **Rmonkey** is updated to interface with the SurveyMonkey API v3.  The latest development version, available here, can be installed directly using  [devtools](http://cran.r-project.org/web/packages/devtools/index.html):
+
+```{r}
+if(!require("devtools")) {
+  install.packages("devtools")
+  library("devtools")
+}
+install_github("seanofahey/Rmonkey")
+library("Rmonkey")
+```
+
+## Setup ##
+
+To use Rmonkey, the user must first have a Survey Monkey account which can be obtained at https://www.surveymonkey.com/user/sign-in/.  Next, within the SurveyMonkey account, the user must create an app that can be used to access data via the api.  This can be done at https://developer.surveymonkey.com/apps/.  In the app configuration, set OAuth Redirect URL as `http://localhost:1410`.  Finally set the user permissions for creating and viewing data within SurveyMonkey with the scopes options.
+
+Once the app is configured, click on settings to reveal the Client ID and Secret keys.  These can be loaded into R using `options`:
+
+```{r}
+options(sm_client_id = 'YourClientID')
+options(sm_secret = 'YourAPISecret')
+```
+
+Rmonkey uses these values inside `smlogin` to initiate an OAuth2.0 login. Calling `smlogin()`, you will redirected to your web browser, where you will login with your regular Survey Monkey account information. `sm_login` will then store a durable OAuth token in `options('sm_oauth_token')`, which is automatically retrieved in subsequent Rmonkey operations.
+
+This token is currently long-lived (meaning it is valid indefinitely). This means that saving the OAuth token between R sessions will prevent you from having to login each time you load **Rmonkey** and allow you to use the package in non-interactive R sessions. If you have trouble logging in, it is also possible to copy the OAuth access token from the [App Settings](https://developer.surveymonkey.com/apps), which can then be manually stored in `options('sm_oauth_token')`. 
+
+## Code Examples ##
+
+Below are some code examples showing how to use the package.
+
+### Establish and Test the API Connection ###
+
+To establish a connection between R and SurveyMonkey use the `smlogin()` function.  This will open an interactive session in your browser to present the API permissions and request authorization.  This function completes the OAuth handshake and saves a long lasting token on the computer.
+
+```{r}
+smlogin()
+```
+
+To verify that the connection is functional you can retrieve information about the user with the `userdetails()` function.
+
+```{r}
+userdetails()
+```
+
+## Get a list of Surveys ###
+
+**RMonkey** provides several options for retrieving information about the surveys in the account.
+
+One can retrieve a list of surveys using the `surveylist()` command.  This will return a list with details of each survey.
+
+```{r}
+sl <- surveylist()
+head(sl)
+```
+
+To retrieve a list of surveys that have been modified since a certain date one can use the `start_modified_at` parameter within the `surveylist()` function.
+
+```{r}
+sl <- surveylist(start_modified_at = '2017-03-25')
+head(sl)
+```
+
+Additional parameters can be used to change the number of responses, add fields to the survey list response, and sort the responses.
+
+```{r}
+sl <- surveylist(per_page = 100, include = 'response_count', sort_by = 'num_responses', sort_order = 'desc')
+head(sl)
+```
+
+## Get Details about a survey ##
+
+To see details about a single survey use the `surveydetails()` function.  This will return basic information about the survey including the title, nickname, ID, number of questions, number of respondents, etc... 
+
+```{r}
+s1.d <- surveydetails(sl[[1]])
+s1.d
+```
+
+## Preview a Survey in the Browser ##
+
+To see a preview of a survey use the `surveypreview()` function.  In the function, pass a survey object retrieved using the survey list function.  This will open a tab in your browser to display the survey preview.  
+
+```{r}
+surveypreview(sl[[1]])
+```
+
+## Retrieve Survey Responses ##
+
+To get a list of responses for a survey use the `surveyresponses()` function.  In the function, pass a survey object retrieved using the survey list function.  This will return a data frame with one row per response and one column per question.  (NOTE: This can take a long time to run.)
+
+```{r}
+s1.r <- surveyresponses(sl[[5]])
+head(s1.r)
+```
+
+To get the survey results into a columnar format use the response_format = 'column' parameter.  (This can be useful if exporting the data to systems that ingest data in this format.)
+
+```{r}
+s1.r <- surveyresponses(sl[[5]], response_format = 'column')
+head(s1.r)
+```
+
