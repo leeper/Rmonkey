@@ -66,7 +66,9 @@ respondentlist <- function(
         return(content)
     } else {
         out <- lapply(content$data$respondents, function(x) {
-            structure(list(respondent_id = x$respondent_id, survey_id = survey), class = "sm_respondent")
+            response <- list(respondent_id = x$respondent_id, survey_id = survey)
+
+            structure(append(response, x[fields]), class = "sm_respondent")
         })
         return(out)
     }
